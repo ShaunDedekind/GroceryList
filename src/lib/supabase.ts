@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { getSession } from './storage'
+import type { CategoryId } from '../types'
+import type { ParsedItem } from './parseItems'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -83,4 +85,36 @@ export async function updateListName(listId: string, name: string) {
     .eq('id', listId)
 
   if (error) throw error
+}
+
+export async function parseItemsWithAI(text: string): Promise<ParsedItem[]> {
+  const { data, error } = await supabase.functions.invoke('parse-items', {
+    body: { text },
+  })
+
+  const payload = data as { items?: ParsedItem[]; error?: string } | null
+
+  if (error) {
+    const message =
+      payload?.error ?? error.message ?? 'Smart parse failed'
+    throw new Error(message)
+  }
+
+  if (!payload) {
+    throw new Error('Smart parse returned no data')
+  }
+
+  if (payload.error) {
+    throw new Error(payload.error)
+  }
+
+  if (!payload.items?.length) {
+    throw new Error('No items found in that text')
+  }
+
+  return payload.items.map((item) => ({
+    text: item.text.trim(),
+    category: item.category as CategoryId,
+    source: 'ai' as const,
+  }))
 }

@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { CategoryId } from '../types'
-import { CATEGORIES, DEFAULT_CATEGORY } from '../constants/categories'
+import { CATEGORIES, DEFAULT_CATEGORY, getCategoryEmoji } from '../constants/categories'
 import { hapticLight } from '../lib/haptics'
 import { springSnappy } from '../lib/motion'
 import { guessCategory } from '../lib/categoryGuess'
+import { saveOverride } from '../lib/categoryOverrides'
+import { parseItemText } from '../lib/parseItemText'
 import { getRecentItems, type RecentItem } from '../lib/recentItems'
 import { RecentChips } from './RecentChips'
 
@@ -25,12 +27,21 @@ export function AddItemBar({ listId, onAdd }: AddItemBarProps) {
     getRecentItems(listId),
   )
   const [categoryIsManual, setCategoryIsManual] = useState(false)
+  const [showHints, setShowHints] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const reducedMotion = useReducedMotion()
 
   const selected = CATEGORIES.find((c) => c.id === category)!
   const isSuggested =
     suggestedCategory !== null && category === suggestedCategory && !categoryIsManual
+
+  const recentHints = useMemo(() => {
+    if (text.trim().length < 2) return []
+    const prefix = text.trim().toLowerCase()
+    return recentItems
+      .filter((item) => item.text.toLowerCase().startsWith(prefix))
+      .slice(0, 5)
+  }, [text, recentItems])
 
   const refreshRecent = useCallback(() => {
     setRecentItems(getRecentItems(listId))
@@ -40,8 +51,13 @@ export function AddItemBar({ listId, onAdd }: AddItemBarProps) {
     if (!text.trim() || adding) return
     setAdding(true)
     setError(null)
+    setShowHints(false)
     try {
-      await onAdd(text, category)
+      const { text: parsedText } = parseItemText(text)
+      if (!parsedText) return
+
+      await onAdd(parsedText, category)
+      saveOverride(listId, parsedText, category)
       setText('')
       setCategoryIsManual(false)
       setSuggestedCategory(null)
@@ -60,8 +76,9 @@ export function AddItemBar({ listId, onAdd }: AddItemBarProps) {
 
   const handleTextChange = (value: string) => {
     setText(value)
+    setShowHints(value.trim().length >= 2)
     if (categoryIsManual) return
-    const guessed = guessCategory(value)
+    const guessed = guessCategory(value, listId)
     setSuggestedCategory(guessed)
     if (guessed) setCategory(guessed)
   }
@@ -71,6 +88,10 @@ export function AddItemBar({ listId, onAdd }: AddItemBarProps) {
     setSuggestedCategory(null)
     setCategory(catId)
     setShowCategories(false)
+    if (text.trim()) {
+      const { text: parsedText } = parseItemText(text)
+      if (parsedText) saveOverride(listId, parsedText, catId)
+    }
   }
 
   const handleRecentSelect = (item: RecentItem) => {
@@ -78,6 +99,7 @@ export function AddItemBar({ listId, onAdd }: AddItemBarProps) {
     setSuggestedCategory(null)
     setText(item.text)
     setCategory(item.category)
+    setShowHints(false)
     inputRef.current?.focus()
   }
 
@@ -121,7 +143,7 @@ export function AddItemBar({ listId, onAdd }: AddItemBarProps) {
         </p>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="relative flex items-center gap-2">
         <button
           type="button"
           onClick={(e) => {
@@ -146,6 +168,8 @@ export function AddItemBar({ listId, onAdd }: AddItemBarProps) {
           type="text"
           value={text}
           onChange={(e) => handleTextChange(e.target.value)}
+          onFocus={() => setShowHints(text.trim().length >= 2)}
+          onBlur={() => setTimeout(() => setShowHints(false), 150)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
@@ -174,6 +198,23 @@ export function AddItemBar({ listId, onAdd }: AddItemBarProps) {
             <path d="M10 4v12M4 10h12" />
           </svg>
         </motion.button>
+
+        {showHints && recentHints.length > 0 && (
+          <div className="absolute bottom-full left-14 right-12 z-20 mb-1 overflow-hidden rounded-xl border border-cream-dark bg-white shadow-lg dark:border-[#2d3f54] dark:bg-[#1e2a3a]">
+            {recentHints.map((item) => (
+              <button
+                key={`${item.text}-${item.category}`}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleRecentSelect(item)}
+                className="press-scale flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#1e293b] active:bg-cream-dark/60 dark:text-[#e2e8f0] dark:active:bg-[#141c27]"
+              >
+                <span>{getCategoryEmoji(item.category)}</span>
+                <span className="truncate">{item.text}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

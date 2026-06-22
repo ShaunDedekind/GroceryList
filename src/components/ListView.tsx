@@ -8,6 +8,7 @@ import { updateListName as updateListNameRemote } from '../lib/supabase'
 import { CategorySection } from './CategorySection'
 import { AddItemBar } from './AddItemBar'
 import { ShareSheet } from './ShareSheet'
+import { PasteSheet } from './PasteSheet'
 import { SkeletonList } from './SkeletonList'
 
 interface ListViewProps {
@@ -17,10 +18,11 @@ interface ListViewProps {
 }
 
 export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) {
-  const { items, loading, error, addItem, toggleItem, deleteItem, clearChecked, refetch } =
+  const { items, loading, error, addItem, addItems, toggleItem, deleteItem, clearChecked, refetch } =
     useItems(session)
   const mainRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
+  const [showPaste, setShowPaste] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showDone, setShowDone] = useState(false)
   const [editName, setEditName] = useState(session.listName)
@@ -81,6 +83,17 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
           </div>
 
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowPaste(true)}
+              className="press-scale flex h-11 w-11 items-center justify-center rounded-full text-sage active:bg-sage/10"
+              aria-label="Paste items"
+            >
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="7" y="4" width="12" height="14" rx="2" />
+                <path d="M5 7H4a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-1" />
+              </svg>
+            </button>
             <button
               type="button"
               onClick={() => setShowShare(true)}
@@ -193,6 +206,14 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
 
       {showShare && (
         <ShareSheet code={session.listCode} onClose={() => setShowShare(false)} />
+      )}
+
+      {showPaste && (
+        <PasteSheet
+          listId={session.listId}
+          onAddItems={addItems}
+          onClose={() => setShowPaste(false)}
+        />
       )}
 
       {showSettings && (

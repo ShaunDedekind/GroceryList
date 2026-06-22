@@ -138,6 +138,19 @@ export function useItems(session: Session) {
     [session.listId, session.displayName],
   )
 
+  const addItems = useCallback(
+    async (toAdd: { text: string; category: CategoryId }[]) => {
+      let added = 0
+      for (const item of toAdd) {
+        if (!item.text.trim()) continue
+        await addItem(item.text, item.category)
+        added++
+      }
+      return added
+    },
+    [addItem],
+  )
+
   const toggleItem = useCallback(async (id: string, checked: boolean) => {
     setItems((prev) =>
       sortItems(
@@ -210,6 +223,7 @@ export function useItems(session: Session) {
     loading,
     error,
     addItem,
+    addItems,
     toggleItem,
     deleteItem,
     clearChecked,

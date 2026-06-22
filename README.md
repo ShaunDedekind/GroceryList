@@ -42,13 +42,31 @@ npm install
 cp .env.example .env.local
 ```
 
-Add your Supabase URL and anon key to `.env.local`, then run the migration in [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql) via the Supabase SQL Editor.
+Add your Supabase URL and anon key to `.env.local`, then run the migrations in [`supabase/migrations/`](supabase/migrations/) via the Supabase SQL Editor (in order: `001_initial_schema.sql`, then `002_ai_usage.sql`).
 
 ```bash
 npm run dev
 ```
 
 Open `http://localhost:5173` — or your local IP on your phone if you're on the same Wi‑Fi.
+
+### Smart parse (optional AI)
+
+The app can parse pasted recipes and messy shopping lists using Claude Haiku 4.5 via a Supabase Edge Function. Tier 0 features (category learning, bulk paste, quantity stripping) work without AI.
+
+**Setup:**
+
+1. Install the [Supabase CLI](https://supabase.com/docs/guides/cli) and link your project: `supabase link`
+2. Set your Anthropic API key as a Supabase secret (never in `.env.local`):
+   ```bash
+   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+   ```
+3. Deploy the edge function:
+   ```bash
+   supabase functions deploy parse-items
+   ```
+
+Smart parse is rate-limited to 30 calls per list per day. Without the edge function deployed, paste and local parsing still work — only the **Smart parse** button will fail gracefully.
 
 ### Deploy to Vercel
 
