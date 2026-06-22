@@ -1,91 +1,74 @@
 # Grocery List
 
-A mobile-first PWA for shared grocery lists. No login — create a list, share a short code, and shop together in real time.
+A tiny shared grocery list app for two people who got tired of fighting over Apple Notes.
 
-## Setup
+Create a list, share a short code, and you're shopping together — no accounts, no App Store, no fuss.
 
-### 1. Supabase
+---
 
-1. Create a free project at [supabase.com](https://supabase.com)
-2. Open **SQL Editor** and run the migration in [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql)
-3. Copy your project URL and anon key from **Settings → API**
+## Hello, stranger
 
-### 2. Environment
+If you found this on GitHub: welcome! This is a personal project I built for me and my wife. We wanted something as simple as a shared note, but a little nicer — items grouped by aisle, check things off as you shop, and see each other's changes within a few seconds.
+
+It's a mobile-first web app you can add to your Home Screen like a real app. No login — just a list code you share with the one other person who needs it.
+
+Feel free to poke around, fork it, or build your own version. It's not a product; it's a nice little tool that works.
+
+---
+
+## How it works
+
+1. **Create a list** — enter your name, get a 6-character code
+2. **Share the code** — your partner opens the app and taps "Join with Code"
+3. **Add items** — pick a category (Fruit & Veg, Meat, Dairy…), type, tap +
+4. **Shop** — check things off as you go; changes sync automatically
+
+On iPhone: open in Safari → Share → **Add to Home Screen** for the full app experience.
+
+---
+
+## For developers
+
+Want to run this yourself? Here's the short version.
+
+**You'll need:** Node.js, a free [Supabase](https://supabase.com) project, and optionally a [Vercel](https://vercel.com) account to host it.
+
+### Run locally
 
 ```bash
+git clone https://github.com/ShaunDedekind/GroceryList.git
+cd GroceryList
+npm install
 cp .env.example .env.local
 ```
 
-Fill in your Supabase credentials:
-
-```
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
-
-### 3. Run locally
+Add your Supabase URL and anon key to `.env.local`, then run the migration in [`supabase/migrations/001_initial_schema.sql`](supabase/migrations/001_initial_schema.sql) via the Supabase SQL Editor.
 
 ```bash
-npm install
 npm run dev
 ```
 
-Open on your phone (same Wi‑Fi): use your machine's local IP, e.g. `http://192.168.1.x:5173`
+Open `http://localhost:5173` — or your local IP on your phone if you're on the same Wi‑Fi.
 
-## Deploy to Vercel (GitHub)
+### Deploy to Vercel
 
-### 1. Push to GitHub
+1. Push the repo to GitHub (or fork this one)
+2. Import it at [vercel.com/new](https://vercel.com/new)
+3. Add two environment variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY` (the publishable/anon key — safe to expose in the browser)
+4. Deploy. Every push to `main` redeploys automatically.
 
-After creating your GitHub repo:
+Build settings Vercel should auto-detect: **Vite**, `npm run build`, output `dist`.
 
-```bash
-git add -A
-git commit -m "Grocery List PWA — initial build"
-git remote add origin https://github.com/YOUR_USERNAME/GroceryList.git
-git push -u origin main
-```
+---
 
-Ensure `.env.local` is **not** committed (it's gitignored).
+## Under the hood
 
-### 2. Import into Vercel
+React · TypeScript · Tailwind · Supabase · PWA
 
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import your `GroceryList` GitHub repo
-3. Confirm build settings:
-   - **Framework Preset:** Vite
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
+List access is code-based — no user accounts. Row Level Security in Postgres makes sure you can only see and edit the list matching your code.
 
-### 3. Environment variables
+---
 
-In Vercel **Settings → Environment Variables**, add for Production, Preview, and Development:
-
-| Name | Value |
-|------|-------|
-| `VITE_SUPABASE_URL` | your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | your Supabase anon key |
-
-Redeploy after adding env vars (Vite bakes them in at build time).
-
-### 4. Verify
-
-- Add an item — it should appear **immediately** (no refresh)
-- Partner's changes appear within ~3 seconds (polling)
-
-## Usage
-
-1. **Create a list** — enter your name, get a share code
-2. **Share the code** — your partner taps "Join with Code" and enters it
-3. **Add items** — pick a category, type, tap +
-4. **Check off** — tap the circle as you shop; changes sync instantly
-
-### Add to Home Screen (iOS)
-
-Safari → Share → **Add to Home Screen**
-
-## Tech
-
-- Vite + React + TypeScript
-- Tailwind CSS
-- Supabase (Postgres + Realtime)
-- vite-plugin-pwa
+Built with love (and mild frustration at the dairy aisle). 🛒
