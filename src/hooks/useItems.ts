@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { CategoryId, GroceryItem, Session } from '../types'
 import { supabase } from '../lib/supabase'
 import { getSession } from '../lib/storage'
+import { saveRecentItem } from '../lib/recentItems'
 
 function sortItems(items: GroceryItem[]): GroceryItem[] {
   return [...items].sort((a, b) => {
@@ -37,6 +38,14 @@ export function useItems(session: Session) {
   )
 
   const pollItems = useCallback(async () => {
+    const { data, error: fetchError } = await loadItems(session.listId)
+    applyFetchResult(
+      data as GroceryItem[] | null,
+      fetchError ? new Error(fetchError.message) : null,
+    )
+  }, [session.listId, applyFetchResult])
+
+  const refetch = useCallback(async () => {
     const { data, error: fetchError } = await loadItems(session.listId)
     applyFetchResult(
       data as GroceryItem[] | null,
@@ -123,6 +132,7 @@ export function useItems(session: Session) {
 
       if (insertError) throw insertError
 
+      saveRecentItem(session.listId, text.trim(), category)
       setItems((prev) => sortItems([...prev, data as GroceryItem]))
     },
     [session.listId, session.displayName],
@@ -203,5 +213,6 @@ export function useItems(session: Session) {
     toggleItem,
     deleteItem,
     clearChecked,
+    refetch,
   }
 }

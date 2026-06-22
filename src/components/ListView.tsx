@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { Session } from '../types'
 import type { CategoryId } from '../types'
 import { CATEGORIES } from '../constants/categories'
 import { useItems } from '../hooks/useItems'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { updateListName as updateListNameRemote } from '../lib/supabase'
 import { CategorySection } from './CategorySection'
 import { AddItemBar } from './AddItemBar'
 import { ShareSheet } from './ShareSheet'
+import { SkeletonList } from './SkeletonList'
 
 interface ListViewProps {
   session: Session
@@ -15,12 +17,18 @@ interface ListViewProps {
 }
 
 export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) {
-  const { items, loading, error, addItem, toggleItem, deleteItem, clearChecked } =
+  const { items, loading, error, addItem, toggleItem, deleteItem, clearChecked, refetch } =
     useItems(session)
+  const mainRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showDone, setShowDone] = useState(false)
   const [editName, setEditName] = useState(session.listName)
+
+  const { pullDistance, isRefreshing, handlers } = usePullToRefresh(mainRef, {
+    onRefresh: refetch,
+    enabled: !loading,
+  })
 
   const grouped = useMemo(() => {
     const map = new Map<CategoryId, typeof items>()
@@ -50,18 +58,17 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
       await updateListNameRemote(session.listId, name)
       onUpdateListName(name)
     } catch {
-      // Still update locally
       onUpdateListName(name)
     }
     setShowSettings(false)
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-cream dark:bg-[#1a1917]">
-      <header className="safe-top sticky top-0 z-10 border-b border-cream-dark/80 bg-cream/90 px-4 pb-3 pt-3 backdrop-blur-lg dark:border-[#3a3835]/80 dark:bg-[#1a1917]/90">
+    <div className="flex min-h-dvh flex-col bg-cream dark:bg-[#141c27]">
+      <header className="safe-top sticky top-0 z-10 border-b border-cream-dark/80 bg-cream/90 px-4 pb-3 pt-3 backdrop-blur-lg dark:border-[#2d3f54]/80 dark:bg-[#141c27]/90">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-bold text-[#2c2825] dark:text-[#f0ebe3]">
+            <h1 className="truncate text-xl font-bold text-[#1e293b] dark:text-[#e2e8f0]">
               {session.listName}
             </h1>
             <p className="text-sm text-warm-gray dark:text-warm-gray-light">
@@ -77,7 +84,7 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
             <button
               type="button"
               onClick={() => setShowShare(true)}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-sage active:bg-sage/10"
+              className="press-scale flex h-11 w-11 items-center justify-center rounded-full text-sage active:bg-sage/10"
               aria-label="Share list code"
             >
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -93,7 +100,7 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
                 setEditName(session.listName)
                 setShowSettings(true)
               }}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-warm-gray active:bg-cream-dark dark:active:bg-[#2a2825]"
+              className="press-scale flex h-11 w-11 items-center justify-center rounded-full text-warm-gray active:bg-cream-dark dark:active:bg-[#1e2a3a]"
               aria-label="Settings"
             >
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -126,20 +133,36 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
         )}
       </header>
 
-      <main className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
+      <main
+        ref={mainRef}
+        className="relative flex-1 overflow-y-auto px-3 pt-2 pb-4"
+        {...handlers}
+      >
+        <div
+          className="pointer-events-none flex items-center justify-center overflow-hidden text-sm text-sage transition-[height] dark:text-sage-light"
+          style={{ height: pullDistance > 0 || isRefreshing ? Math.max(pullDistance, isRefreshing ? 40 : 0) : 0 }}
+          aria-hidden="true"
+        >
+          {isRefreshing ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-sage/30 border-t-sage" />
+          ) : pullDistance >= 72 ? (
+            'Release to refresh'
+          ) : pullDistance > 0 ? (
+            'Pull to refresh'
+          ) : null}
+        </div>
+
         {error && (
           <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
             Could not load items: {error}
           </p>
         )}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-sage/30 border-t-sage" />
-          </div>
+          <SkeletonList />
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <span className="text-5xl">🥑</span>
-            <p className="mt-4 text-lg font-medium text-[#2c2825] dark:text-[#f0ebe3]">
+            <p className="mt-4 text-lg font-medium text-[#1e293b] dark:text-[#e2e8f0]">
               Your list is empty
             </p>
             <p className="mt-1 text-sm text-warm-gray dark:text-warm-gray-light">
@@ -157,6 +180,7 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
                 key={cat.id}
                 categoryId={cat.id}
                 items={filtered}
+                currentUserName={session.displayName}
                 onToggle={toggleItem}
                 onDelete={deleteItem}
               />
@@ -165,7 +189,7 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
         )}
       </main>
 
-      <AddItemBar onAdd={addItem} />
+      <AddItemBar listId={session.listId} onAdd={addItem} />
 
       {showShare && (
         <ShareSheet code={session.listCode} onClose={() => setShowShare(false)} />
@@ -177,11 +201,11 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
           onClick={() => setShowSettings(false)}
         >
           <div
-            className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-6 pb-8 pt-6 dark:bg-[#2a2825]"
+            className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-6 pb-8 pt-6 dark:bg-[#1e2a3a]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-cream-dark dark:bg-[#3a3835]" />
-            <h3 className="text-lg font-semibold text-[#2c2825] dark:text-[#f0ebe3]">
+            <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-cream-dark dark:bg-[#2d3f54]" />
+            <h3 className="text-lg font-semibold text-[#1e293b] dark:text-[#e2e8f0]">
               Settings
             </h3>
 
@@ -193,14 +217,14 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-cream-dark bg-cream/50 px-4 py-3 text-base outline-none focus:border-sage dark:border-[#3a3835] dark:bg-[#1a1917] dark:text-[#f0ebe3]"
+                className="mt-2 w-full rounded-xl border border-cream-dark bg-cream/50 px-4 py-3 text-base outline-none focus:border-sage dark:border-[#2d3f54] dark:bg-[#141c27] dark:text-[#e2e8f0]"
               />
             </label>
 
             <button
               type="button"
               onClick={handleSaveName}
-              className="mt-4 w-full rounded-2xl bg-sage py-3.5 font-semibold text-white active:bg-sage-dark"
+              className="press-scale mt-4 w-full rounded-2xl bg-sage py-3.5 font-semibold text-white active:bg-sage-dark"
             >
               Save
             </button>

@@ -8,6 +8,7 @@ import {
   initListCodeFromSession,
   isSupabaseConfigured,
 } from '../lib/supabase'
+import { withViewTransition } from '../lib/viewTransition'
 
 export function useList() {
   const [session, setSession] = useState<Session | null>(() => getSession())
@@ -31,7 +32,7 @@ export function useList() {
       }
       saveSession(newSession)
       setListCode(list.code)
-      setSession(newSession)
+      withViewTransition(() => setSession(newSession))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create list')
     } finally {
@@ -52,7 +53,7 @@ export function useList() {
       }
       saveSession(newSession)
       setListCode(list.code)
-      setSession(newSession)
+      withViewTransition(() => setSession(newSession))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to join list')
     } finally {
@@ -63,7 +64,7 @@ export function useList() {
   const handleLeave = useCallback(() => {
     clearSession()
     setListCode(null)
-    setSession(null)
+    withViewTransition(() => setSession(null))
   }, [])
 
   const updateListName = useCallback((name: string) => {
