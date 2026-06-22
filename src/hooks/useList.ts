@@ -74,6 +74,13 @@ export function useList() {
     setSession(updated)
   }, [session])
 
+  const updateDisplayName = useCallback((displayName: string) => {
+    if (!session) return
+    const updated = { ...session, displayName: displayName.trim() }
+    saveSession(updated)
+    setSession(updated)
+  }, [session])
+
   return {
     session,
     loading,
@@ -83,6 +90,7 @@ export function useList() {
     joinList: handleJoin,
     leaveList: handleLeave,
     updateListName,
+    updateDisplayName,
     clearError: () => setError(null),
   }
 }

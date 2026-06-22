@@ -17,12 +17,13 @@ interface ItemRowProps {
   currentUserName: string
   onToggle: (id: string, checked: boolean) => void
   onDelete: (id: string) => void
+  onEdit: (item: GroceryItem) => void
 }
 
 const DELETE_THRESHOLD = -72
 const LONG_PRESS_MS = 500
 
-export function ItemRow({ item, currentUserName, onToggle, onDelete }: ItemRowProps) {
+export function ItemRow({ item, currentUserName, onToggle, onDelete, onEdit }: ItemRowProps) {
   const reducedMotion = useReducedMotion()
   const x = useMotionValue(0)
   const deleteOpacity = useTransform(x, [-72, -24, 0], [1, 0.4, 0])
@@ -126,15 +127,21 @@ export function ItemRow({ item, currentUserName, onToggle, onDelete }: ItemRowPr
           </AnimatePresence>
         </motion.button>
 
-        <p
-          className={`min-w-0 flex-1 text-base leading-snug transition-all ${
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onEdit(item)
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={`min-w-0 flex-1 text-left text-base leading-snug transition-all active:opacity-70 ${
             item.checked
               ? 'text-warm-gray-light line-through dark:text-warm-gray'
               : 'text-[#1e293b] dark:text-[#e2e8f0]'
           }`}
         >
           {item.text}
-        </p>
+        </button>
 
         <UserBadge
           name={item.added_by}

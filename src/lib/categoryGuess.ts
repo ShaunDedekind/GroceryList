@@ -1,6 +1,7 @@
 import type { CategoryId } from '../types'
 import { DEFAULT_CATEGORY } from '../constants/categories'
 import { getOverride } from './categoryOverrides'
+import { getRecentItems } from './recentItems'
 
 const KEYWORD_MAP: Record<CategoryId, string[]> = {
   fruit_veg: [
@@ -37,25 +38,26 @@ const KEYWORD_MAP: Record<CategoryId, string[]> = {
     'frozen', 'ice cream', 'icecream', 'pizza', 'popsicle',
   ],
   drinks: [
-    'beer', 'coffee', 'cola', 'drink', 'juice', 'soda', 'tea', 'water', 'wine',
+    'beer', 'coffee', 'cola', 'coke', 'pepsi', 'sprite', 'fanta', 'drink',
+    'juice', 'soda', 'tea', 'water', 'wine', 'kombucha', 'seltzer', 'sparkling',
+    'coke zero', 'diet coke', 'coca cola', 'energy drink', 'ginger ale',
   ],
   household: [
     'bag', 'bags', 'bleach', 'cleaner', 'detergent', 'diapers', 'foil',
     'garbage', 'napkin', 'napkins', 'paper towel', 'soap', 'sponge', 'tissue',
-    'toilet', 'toothpaste', 'towel', 'trash', 'wrap', 'laundry', 'dish soap',
+    'toilet', 'toothpaste', 'towel', 'trash', 'laundry', 'dish soap',
+    'cotton tips', 'cotton buds', 'q tips', 'q-tips', 'qtips', 'buds',
+    'shampoo', 'conditioner', 'deodorant', 'razor', 'bandage', 'vitamin',
+    'lotion', 'sanitizer',
   ],
   other: [],
 }
 
-export function guessCategory(text: string, listId?: string): CategoryId | null {
-  const normalized = text.trim().toLowerCase()
-  if (!normalized) return null
+function normalizeForMatch(text: string): string {
+  return text.trim().toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ')
+}
 
-  if (listId) {
-    const override = getOverride(listId, text)
-    if (override) return override
-  }
-
+function matchKeywords(normalized: string): CategoryId | null {
   for (const [categoryId, keywords] of Object.entries(KEYWORD_MAP) as [
     CategoryId,
     string[],
@@ -73,7 +75,6 @@ export function guessCategory(text: string, listId?: string): CategoryId | null 
     }
   }
 
-  // Single-word partial match for short inputs (e.g. "mil" won't match, "milk" will)
   const words = normalized.split(/\s+/)
   for (const word of words) {
     for (const [categoryId, keywords] of Object.entries(KEYWORD_MAP) as [
@@ -86,6 +87,23 @@ export function guessCategory(text: string, listId?: string): CategoryId | null 
   }
 
   return null
+}
+
+export function guessCategory(text: string, listId?: string): CategoryId | null {
+  const normalized = normalizeForMatch(text)
+  if (!normalized) return null
+
+  if (listId) {
+    const override = getOverride(listId, text)
+    if (override) return override
+
+    const recent = getRecentItems(listId).find(
+      (item) => normalizeForMatch(item.text) === normalized,
+    )
+    if (recent) return recent.category
+  }
+
+  return matchKeywords(normalized)
 }
 
 export function guessCategoryOrDefault(text: string, listId?: string): CategoryId {

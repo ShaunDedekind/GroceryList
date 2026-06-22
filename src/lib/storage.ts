@@ -28,3 +28,10 @@ export function updateSessionName(listName: string): void {
     saveSession({ ...session, listName })
   }
 }
+
+export function updateSessionDisplayName(displayName: string): void {
+  const session = getSession()
+  if (session) {
+    saveSession({ ...session, displayName: displayName.trim() })
+  }
+}

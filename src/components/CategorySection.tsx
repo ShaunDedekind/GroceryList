@@ -11,6 +11,7 @@ interface CategorySectionProps {
   currentUserName: string
   onToggle: (id: string, checked: boolean) => void
   onDelete: (id: string) => void
+  onEdit: (item: GroceryItem) => void
   defaultOpen?: boolean
 }
 
@@ -20,6 +21,7 @@ export function CategorySection({
   currentUserName,
   onToggle,
   onDelete,
+  onEdit,
   defaultOpen = true,
 }: CategorySectionProps) {
   const [open, setOpen] = useState(defaultOpen)
@@ -75,6 +77,7 @@ export function CategorySection({
                   currentUserName={currentUserName}
                   onToggle={onToggle}
                   onDelete={onDelete}
+                  onEdit={onEdit}
                 />
               ))}
             </AnimatePresence>

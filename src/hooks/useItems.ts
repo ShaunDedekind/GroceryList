@@ -187,6 +187,48 @@ export function useItems(session: Session) {
     }
   }, [])
 
+  const updateItem = useCallback(
+    async (id: string, updates: { text?: string; category?: CategoryId }) => {
+      const trimmedText = updates.text?.trim()
+      const patch: { text?: string; category?: CategoryId } = {}
+      if (trimmedText) patch.text = trimmedText
+      if (updates.category) patch.category = updates.category
+      if (Object.keys(patch).length === 0) return
+
+      const previous = items
+      setItems((prev) =>
+        sortItems(
+          prev.map((item) =>
+            item.id === id ? { ...item, ...patch } : item,
+          ),
+        ),
+      )
+
+      const { data, error: updateError } = await supabase
+        .from('items')
+        .update(patch)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (updateError) {
+        setItems(previous)
+        throw updateError
+      }
+
+      if (data) {
+        setItems((prev) =>
+          sortItems(
+            prev.map((item) =>
+              item.id === id ? (data as GroceryItem) : item,
+            ),
+          ),
+        )
+      }
+    },
+    [items],
+  )
+
   const deleteItem = useCallback(async (id: string) => {
     const previous = items
     setItems((prev) => prev.filter((item) => item.id !== id))
@@ -225,6 +267,7 @@ export function useItems(session: Session) {
     addItem,
     addItems,
     toggleItem,
+    updateItem,
     deleteItem,
     clearChecked,
     refetch,

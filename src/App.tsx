@@ -26,6 +26,7 @@ export default function App() {
       session={list.session}
       onLeave={list.leaveList}
       onUpdateListName={list.updateListName}
+      onUpdateDisplayName={list.updateDisplayName}
     />
   )
 }

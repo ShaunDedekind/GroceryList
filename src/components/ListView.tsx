@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import type { Session } from '../types'
 import type { CategoryId } from '../types'
+import type { GroceryItem } from '../types'
 import { CATEGORIES } from '../constants/categories'
 import { useItems } from '../hooks/useItems'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
@@ -9,16 +10,18 @@ import { CategorySection } from './CategorySection'
 import { AddItemBar } from './AddItemBar'
 import { ShareSheet } from './ShareSheet'
 import { PasteSheet } from './PasteSheet'
+import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
 
 interface ListViewProps {
   session: Session
   onLeave: () => void
   onUpdateListName: (name: string) => void
+  onUpdateDisplayName: (name: string) => void
 }
 
-export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) {
-  const { items, loading, error, addItem, addItems, toggleItem, deleteItem, clearChecked, refetch } =
+export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayName }: ListViewProps) {
+  const { items, loading, error, addItem, addItems, toggleItem, updateItem, deleteItem, clearChecked, refetch } =
     useItems(session)
   const mainRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
@@ -26,6 +29,14 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
   const [showSettings, setShowSettings] = useState(false)
   const [showDone, setShowDone] = useState(false)
   const [editName, setEditName] = useState(session.listName)
+  const [editDisplayName, setEditDisplayName] = useState(session.displayName)
+  const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
+
+  const openSettings = () => {
+    setEditName(session.listName)
+    setEditDisplayName(session.displayName)
+    setShowSettings(true)
+  }
 
   const { pullDistance, isRefreshing, handlers } = usePullToRefresh(mainRef, {
     onRefresh: refetch,
@@ -54,15 +65,23 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
     return true
   })
 
-  const handleSaveName = async () => {
+  const handleSaveSettings = async () => {
     const name = editName.trim() || 'Our Grocery List'
+    const displayName = editDisplayName.trim()
+    if (!displayName) return
+
     try {
       await updateListNameRemote(session.listId, name)
       onUpdateListName(name)
     } catch {
       onUpdateListName(name)
     }
+    onUpdateDisplayName(displayName)
     setShowSettings(false)
+  }
+
+  const handleSaveItem = async (id: string, text: string, category: CategoryId) => {
+    await updateItem(id, { text, category })
   }
 
   return (
@@ -70,9 +89,13 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
       <header className="safe-top sticky top-0 z-10 border-b border-cream-dark/80 bg-cream/90 px-4 pb-3 pt-3 backdrop-blur-lg dark:border-[#2d3f54]/80 dark:bg-[#141c27]/90">
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-bold text-[#1e293b] dark:text-[#e2e8f0]">
+            <button
+              type="button"
+              onClick={openSettings}
+              className="truncate text-left text-xl font-bold text-[#1e293b] active:opacity-70 dark:text-[#e2e8f0]"
+            >
               {session.listName}
-            </h1>
+            </button>
             <p className="text-sm text-warm-gray dark:text-warm-gray-light">
               {uncheckedCount === 0
                 ? 'All done!'
@@ -109,10 +132,7 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
             </button>
             <button
               type="button"
-              onClick={() => {
-                setEditName(session.listName)
-                setShowSettings(true)
-              }}
+              onClick={openSettings}
               className="press-scale flex h-11 w-11 items-center justify-center rounded-full text-warm-gray active:bg-cream-dark dark:active:bg-[#1e2a3a]"
               aria-label="Settings"
             >
@@ -196,6 +216,7 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
                 currentUserName={session.displayName}
                 onToggle={toggleItem}
                 onDelete={deleteItem}
+                onEdit={setEditingItem}
               />
             )
           })
@@ -213,6 +234,15 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
           listId={session.listId}
           onAddItems={addItems}
           onClose={() => setShowPaste(false)}
+        />
+      )}
+
+      {editingItem && (
+        <ItemEditSheet
+          item={editingItem}
+          listId={session.listId}
+          onSave={handleSaveItem}
+          onClose={() => setEditingItem(null)}
         />
       )}
 
@@ -242,10 +272,23 @@ export function ListView({ session, onLeave, onUpdateListName }: ListViewProps) 
               />
             </label>
 
+            <label className="mt-5 block">
+              <span className="text-sm font-medium text-warm-gray dark:text-warm-gray-light">
+                Your name
+              </span>
+              <input
+                type="text"
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+                className="mt-2 w-full rounded-xl border border-cream-dark bg-cream/50 px-4 py-3 text-base outline-none focus:border-sage dark:border-[#2d3f54] dark:bg-[#141c27] dark:text-[#e2e8f0]"
+              />
+            </label>
+
             <button
               type="button"
-              onClick={handleSaveName}
-              className="press-scale mt-4 w-full rounded-2xl bg-sage py-3.5 font-semibold text-white active:bg-sage-dark"
+              onClick={handleSaveSettings}
+              disabled={!editDisplayName.trim()}
+              className="press-scale mt-4 w-full rounded-2xl bg-sage py-3.5 font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
             >
               Save
             </button>
