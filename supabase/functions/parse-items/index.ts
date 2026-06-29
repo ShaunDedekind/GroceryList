@@ -25,7 +25,7 @@ const RATE_WINDOW_MS = 24 * 60 * 60 * 1000
 
 const SYSTEM_PROMPT = `You extract grocery items from pasted text (shopping lists, recipes, meal plans).
 Return ONLY valid JSON with this exact shape: {"items":[{"text":"item name","category":"category_id"}]}
-Use short grocery item names (strip quantities, units, and cooking instructions).
+Use short grocery item names only — no amounts or units (e.g. "cumin" not "1 tsp cumin", "eggs" not "2 eggs"). Strip cooking instructions and prep notes.
 Categories must be exactly one of: fruit_veg, meat, dairy, bakery, pantry, frozen, drinks, household, other.
 Category guide:
 - fruit_veg: produce, herbs, fresh vegetables and fruit

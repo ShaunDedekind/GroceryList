@@ -1,13 +1,23 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-cream: #f0f4f8;
-  --color-cream-dark: #dce4ed;
+  --color-cream: #f6f4f0;
+  --color-cream-dark: #e8e4dc;
   --color-sage: #5b7a9d;
   --color-sage-light: #7a9bb8;
   --color-sage-dark: #4a6580;
+  --color-celebrate: #5a9a6e;
   --color-warm-gray: #5c6b7a;
   --color-warm-gray-light: #8b9aab;
+  --color-surface: #141c27;
+  --color-surface-raised: #1e2a3a;
+  --color-border-dark: #2d3f54;
+  --color-ink: #1e293b;
+  --color-ink-dark: #e2e8f0;
+
+  --text-title: 1.125rem;
+  --text-body: 0.875rem;
+  --text-meta: 0.75rem;
 }
 
 html {
@@ -17,16 +27,33 @@ html {
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--text-body);
+  line-height: 1.4;
   background-color: var(--color-cream);
-  color: #1e293b;
+  color: var(--color-ink);
   overscroll-behavior: none;
 }
 
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #141c27;
-    color: #e2e8f0;
+    background-color: var(--color-surface);
+    color: var(--color-ink-dark);
   }
+}
+
+.text-title {
+  font-size: var(--text-title);
+  line-height: 1.25;
+}
+
+.text-body {
+  font-size: var(--text-body);
+  line-height: 1.4;
+}
+
+.text-meta {
+  font-size: var(--text-meta);
+  line-height: 1.35;
 }
 
 .safe-top {
@@ -34,7 +61,7 @@ body {
 }
 
 .safe-bottom {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
 .press-scale {

@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, type HTMLAttributes } from 'react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   motion,
   AnimatePresence,
@@ -18,18 +20,68 @@ interface ItemRowProps {
   onToggle: (id: string, checked: boolean) => void
   onDelete: (id: string) => void
   onEdit: (item: GroceryItem) => void
+  reorderMode?: boolean
+  shopMode?: boolean
+  isDragOverlay?: boolean
 }
 
 const DELETE_THRESHOLD = -72
 const LONG_PRESS_MS = 500
 
-export function ItemRow({ item, currentUserName, onToggle, onDelete, onEdit }: ItemRowProps) {
+function DragHandle(props: HTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      {...props}
+      className={`flex h-8 w-6 shrink-0 touch-none items-center justify-center rounded-md text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface-raised ${props.className ?? ''}`}
+      aria-label="Reorder item"
+    >
+      <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
+        <circle cx="2.5" cy="2.5" r="1.2" />
+        <circle cx="7.5" cy="2.5" r="1.2" />
+        <circle cx="2.5" cy="7" r="1.2" />
+        <circle cx="7.5" cy="7" r="1.2" />
+        <circle cx="2.5" cy="11.5" r="1.2" />
+        <circle cx="7.5" cy="11.5" r="1.2" />
+      </svg>
+    </button>
+  )
+}
+
+export function ItemRow({
+  item,
+  currentUserName,
+  onToggle,
+  onDelete,
+  onEdit,
+  reorderMode = false,
+  shopMode = false,
+  isDragOverlay = false,
+}: ItemRowProps) {
   const reducedMotion = useReducedMotion()
   const x = useMotionValue(0)
   const deleteOpacity = useTransform(x, [-72, -24, 0], [1, 0.4, 0])
   const [showDeleteHint, setShowDeleteHint] = useState(false)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isTouch = typeof window !== 'undefined' && 'ontouchstart' in window
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: item.id,
+    disabled: !reorderMode || isDragOverlay,
+  })
+
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.35 : 1,
+  }
 
   const handleToggle = () => {
     hapticLight()
@@ -58,17 +110,20 @@ export function ItemRow({ item, currentUserName, onToggle, onDelete, onEdit }: I
 
   return (
     <motion.div
-      layout={!reducedMotion}
+      ref={setNodeRef}
+      style={sortableStyle}
+      layout={!reducedMotion && !isDragging}
       initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: isDragging ? 0.35 : 1, y: 0 }}
       exit={
         reducedMotion
           ? { opacity: 0 }
           : { opacity: 0, x: -48, transition: { duration: 0.2 } }
       }
       transition={spring}
-      className="group relative overflow-hidden rounded-xl"
+      className="group relative rounded-xl"
     >
+      <div className="relative overflow-hidden rounded-xl">
       <motion.div
         style={{ opacity: deleteOpacity }}
         className="absolute inset-y-0 right-0 flex w-20 items-center justify-center bg-red-500 text-sm font-semibold text-white"
@@ -78,7 +133,7 @@ export function ItemRow({ item, currentUserName, onToggle, onDelete, onEdit }: I
       </motion.div>
 
       <motion.div
-        drag={isTouch ? 'x' : false}
+        drag={isTouch && !isDragging ? 'x' : false}
         dragConstraints={{ left: -80, right: 0 }}
         dragElastic={0.08}
         style={{ x: isTouch ? x : 0 }}
@@ -92,14 +147,22 @@ export function ItemRow({ item, currentUserName, onToggle, onDelete, onEdit }: I
         onPointerDown={startLongPress}
         onPointerUp={cancelLongPress}
         onPointerLeave={cancelLongPress}
-        className="relative flex items-center gap-3 bg-cream py-2.5 dark:bg-[#141c27]"
+        className={`relative flex items-center bg-cream pr-0.5 dark:bg-surface ${
+          shopMode ? 'gap-2.5 py-2.5' : reorderMode ? 'gap-1.5 py-2' : 'gap-2 py-2'
+        }`}
       >
+        {reorderMode && !isDragOverlay && (
+          <DragHandle {...attributes} {...listeners} />
+        )}
+
         <motion.button
           type="button"
           onClick={handleToggle}
           whileTap={reducedMotion ? undefined : { scale: 0.85 }}
           transition={springSnappy}
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+          className={`flex shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+            shopMode ? 'h-9 w-9' : 'h-7 w-7'
+          } ${
             item.checked
               ? 'border-sage bg-sage text-white'
               : 'border-warm-gray-light/50 active:border-sage'
@@ -134,10 +197,12 @@ export function ItemRow({ item, currentUserName, onToggle, onDelete, onEdit }: I
             onEdit(item)
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className={`min-w-0 flex-1 text-left text-base leading-snug transition-all active:opacity-70 ${
+          className={`min-w-0 flex-1 text-left text-body leading-snug transition-all active:opacity-70 ${
+            shopMode ? 'line-clamp-2' : 'truncate'
+          } ${
             item.checked
               ? 'text-warm-gray-light line-through dark:text-warm-gray'
-              : 'text-[#1e293b] dark:text-[#e2e8f0]'
+              : 'text-ink dark:text-ink-dark'
           }`}
         >
           {item.text}
@@ -165,6 +230,7 @@ export function ItemRow({ item, currentUserName, onToggle, onDelete, onEdit }: I
           </button>
         )}
       </motion.div>
+      </div>
 
       {showDeleteHint && !isTouch && (
         <div className="absolute inset-x-0 -bottom-8 z-10 flex justify-end px-2">

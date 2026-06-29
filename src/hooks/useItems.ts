@@ -1,43 +1,55 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CategoryId, GroceryItem, Session } from '../types'
+import { CATEGORIES } from '../constants/categories'
+import {
+  applyOrderUpdates,
+  nextSortOrder,
+  sortItems,
+  type ItemOrderUpdate,
+} from '../lib/itemOrder'
 import { supabase } from '../lib/supabase'
 import { getSession } from '../lib/storage'
 import { saveRecentItem } from '../lib/recentItems'
+import { saveOverride } from '../lib/categoryOverrides'
 
-function sortItems(items: GroceryItem[]): GroceryItem[] {
-  return [...items].sort((a, b) => {
-    if (a.checked !== b.checked) return a.checked ? 1 : -1
-    return a.text.localeCompare(b.text)
-  })
-}
+const CATEGORY_IDS = CATEGORIES.map((cat) => cat.id)
 
 async function loadItems(listId: string) {
   return supabase
     .from('items')
     .select('*')
     .eq('list_id', listId)
+    .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
 }
 
-export function useItems(session: Session) {
+export function useItems(
+  session: Session,
+  options?: { onRemoteInsert?: (item: GroceryItem) => void },
+) {
   const [items, setItems] = useState<GroceryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isDraggingRef = useRef(false)
 
   const applyFetchResult = useCallback(
     (data: GroceryItem[] | null, fetchError: Error | null) => {
       if (fetchError) {
         console.error('Failed to fetch items:', fetchError.message)
         setError(fetchError.message)
-      } else {
-        setItems(sortItems(data ?? []))
-        setError(null)
+        return
       }
+
+      if (isDraggingRef.current) return
+
+      setItems(sortItems(data ?? []))
+      setError(null)
     },
     [],
   )
 
   const pollItems = useCallback(async () => {
+    if (isDraggingRef.current) return
     const { data, error: fetchError } = await loadItems(session.listId)
     applyFetchResult(
       data as GroceryItem[] | null,
@@ -81,9 +93,17 @@ export function useItems(session: Session) {
           filter: `list_id=eq.${session.listId}`,
         },
         (payload) => {
+          if (isDraggingRef.current) return
+
           if (payload.eventType === 'INSERT') {
+            const newItem = payload.new as GroceryItem
+            const currentName =
+              getSession()?.displayName ?? session.displayName
+            if (newItem.added_by !== currentName) {
+              options?.onRemoteInsert?.(newItem)
+            }
             setItems((prev) =>
-              sortItems([...prev, payload.new as GroceryItem]),
+              sortItems([...prev, newItem]),
             )
           } else if (payload.eventType === 'UPDATE') {
             setItems((prev) =>
@@ -111,13 +131,18 @@ export function useItems(session: Session) {
       supabase.removeChannel(channel)
       clearInterval(pollInterval)
     }
-  }, [session.listId, applyFetchResult, pollItems])
+  }, [session.listId, session.displayName, applyFetchResult, pollItems, options?.onRemoteInsert])
+
+  const setDragging = useCallback((dragging: boolean) => {
+    isDraggingRef.current = dragging
+  }, [])
 
   const addItem = useCallback(
     async (text: string, category: CategoryId) => {
       if (!text.trim()) return
 
       const displayName = getSession()?.displayName ?? session.displayName
+      const sort_order = nextSortOrder(items, category)
 
       const { data, error: insertError } = await supabase
         .from('items')
@@ -126,6 +151,7 @@ export function useItems(session: Session) {
           text: text.trim(),
           category,
           added_by: displayName,
+          sort_order,
         })
         .select()
         .single()
@@ -135,7 +161,7 @@ export function useItems(session: Session) {
       saveRecentItem(session.listId, text.trim(), category)
       setItems((prev) => sortItems([...prev, data as GroceryItem]))
     },
-    [session.listId, session.displayName],
+    [session.listId, session.displayName, items],
   )
 
   const addItems = useCallback(
@@ -229,6 +255,45 @@ export function useItems(session: Session) {
     [items],
   )
 
+  const reorderItems = useCallback(
+    async (updates: ItemOrderUpdate[]) => {
+      if (updates.length === 0) return
+
+      const previous = items
+      const nextItems = applyOrderUpdates(items, updates)
+      setItems(nextItems)
+
+      for (const update of updates) {
+        const moved = nextItems.find((item) => item.id === update.id)
+        if (moved && moved.category !== previous.find((item) => item.id === update.id)?.category) {
+          saveOverride(session.listId, moved.text, update.category)
+        }
+      }
+
+      try {
+        const results = await Promise.all(
+          updates.map((update) =>
+            supabase
+              .from('items')
+              .update({
+                category: update.category,
+                sort_order: update.sort_order,
+              })
+              .eq('id', update.id),
+          ),
+        )
+
+        for (const result of results) {
+          if (result.error) throw result.error
+        }
+      } catch (err) {
+        setItems(previous)
+        throw err
+      }
+    },
+    [items, session.listId],
+  )
+
   const deleteItem = useCallback(async (id: string) => {
     const previous = items
     setItems((prev) => prev.filter((item) => item.id !== id))
@@ -268,8 +333,11 @@ export function useItems(session: Session) {
     addItems,
     toggleItem,
     updateItem,
+    reorderItems,
     deleteItem,
     clearChecked,
     refetch,
+    setDragging,
+    categoryIds: CATEGORY_IDS,
   }
 }

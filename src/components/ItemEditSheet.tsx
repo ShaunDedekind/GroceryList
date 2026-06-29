@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { CategoryId, GroceryItem } from '../types'
 import { CATEGORIES } from '../constants/categories'
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { saveOverride } from '../lib/categoryOverrides'
 import { hapticLight } from '../lib/haptics'
 
@@ -12,6 +13,7 @@ interface ItemEditSheetProps {
 }
 
 export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetProps) {
+  useBodyScrollLock(true)
   const [text, setText] = useState(item.text)
   const [category, setCategory] = useState<CategoryId>(item.category as CategoryId)
   const [saving, setSaving] = useState(false)
@@ -41,16 +43,16 @@ export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetPr
       onClick={onClose}
     >
       <div
-        className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-6 pb-8 pt-6 dark:bg-[#1e2a3a]"
+        className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-cream-dark dark:bg-[#2d3f54]" />
-        <h3 className="text-lg font-semibold text-[#1e293b] dark:text-[#e2e8f0]">
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-cream-dark dark:bg-border-dark" />
+        <h3 className="text-title font-semibold text-ink dark:text-ink-dark">
           Edit item
         </h3>
 
-        <label className="mt-5 block">
-          <span className="text-sm font-medium text-warm-gray dark:text-warm-gray-light">
+        <label className="mt-4 block">
+          <span className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
             Item name
           </span>
           <input
@@ -58,23 +60,23 @@ export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetPr
             value={text}
             onChange={(e) => setText(e.target.value)}
             autoFocus
-            className="mt-2 w-full rounded-xl border border-cream-dark bg-cream/50 px-4 py-3 text-base outline-none focus:border-sage dark:border-[#2d3f54] dark:bg-[#141c27] dark:text-[#e2e8f0]"
+            className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
           />
         </label>
 
-        <p className="mt-5 text-sm font-medium text-warm-gray dark:text-warm-gray-light">
+        <p className="mt-4 text-meta font-medium text-warm-gray dark:text-warm-gray-light">
           Category
         </p>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-1.5 grid grid-cols-3 gap-1.5">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               type="button"
               onClick={() => setCategory(cat.id)}
-              className={`press-scale flex items-center gap-1.5 rounded-xl px-2.5 py-2.5 text-sm font-medium transition-colors ${
+              className={`press-scale flex items-center gap-1 rounded-xl px-2 py-2 text-meta font-medium transition-colors ${
                 category === cat.id
                   ? 'bg-sage/15 text-sage-dark dark:text-sage-light'
-                  : 'bg-cream-dark/60 text-warm-gray active:bg-cream-dark dark:bg-[#141c27] dark:text-warm-gray-light'
+                  : 'bg-cream-dark/60 text-warm-gray active:bg-cream-dark dark:bg-surface dark:text-warm-gray-light'
               }`}
             >
               <span>{cat.emoji}</span>
@@ -84,7 +86,7 @@ export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetPr
         </div>
 
         {error && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
+          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">
             {error}
           </p>
         )}
@@ -93,7 +95,7 @@ export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetPr
           type="button"
           onClick={handleSave}
           disabled={!text.trim() || saving}
-          className="press-scale mt-5 w-full rounded-2xl bg-sage py-3.5 font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
+          className="press-scale mt-4 w-full rounded-2xl bg-sage py-2.5 text-sm font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
         >
           Save
         </button>
@@ -101,7 +103,7 @@ export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetPr
         <button
           type="button"
           onClick={onClose}
-          className="mt-3 w-full rounded-2xl py-3.5 font-medium text-warm-gray active:bg-cream-dark dark:text-warm-gray-light dark:active:bg-[#141c27]"
+          className="mt-2 w-full rounded-2xl py-2.5 text-sm font-medium text-warm-gray active:bg-cream-dark dark:text-warm-gray-light dark:active:bg-surface"
         >
           Cancel
         </button>

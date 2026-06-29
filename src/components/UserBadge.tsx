@@ -12,7 +12,7 @@ export function UserBadge({ name, isCurrentUser }: UserBadgeProps) {
   return (
     <span
       title={name ?? undefined}
-      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ring-2 ${
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ring-1 ring-inset ${
         isCurrentUser ? 'ring-sage/60' : 'ring-transparent'
       }`}
       style={{ backgroundColor: color }}

@@ -33,19 +33,19 @@ export default function App() {
 
 function SetupRequired() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-cream px-6 dark:bg-[#141c27]">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-cream px-5 dark:bg-surface">
       <div className="max-w-sm text-center">
         <span className="text-5xl">🛒</span>
-        <h1 className="mt-4 text-2xl font-semibold text-[#1e293b] dark:text-[#e2e8f0]">
+        <h1 className="mt-3 text-2xl font-semibold text-ink dark:text-ink-dark">
           Almost ready!
         </h1>
-        <p className="mt-3 text-warm-gray dark:text-warm-gray-light">
-          Copy <code className="rounded bg-cream-dark px-1.5 py-0.5 text-sm dark:bg-[#1e2a3a]">.env.example</code> to{' '}
-          <code className="rounded bg-cream-dark px-1.5 py-0.5 text-sm dark:bg-[#1e2a3a]">.env.local</code> and add your Supabase credentials.
+        <p className="mt-2 text-sm text-warm-gray dark:text-warm-gray-light">
+          Copy <code className="rounded bg-cream-dark px-1.5 py-0.5 text-meta dark:bg-surface-raised">.env.example</code> to{' '}
+          <code className="rounded bg-cream-dark px-1.5 py-0.5 text-meta dark:bg-surface-raised">.env.local</code> and add your Supabase credentials.
         </p>
-        <p className="mt-4 text-sm text-warm-gray-light">
+        <p className="mt-3 text-meta text-warm-gray-light">
           Then run the migration in{' '}
-          <code className="text-xs">supabase/migrations/001_initial_schema.sql</code>
+          <code className="text-meta">supabase/migrations/001_initial_schema.sql</code>
         </p>
       </div>
     </div>

@@ -1,17 +1,36 @@
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState, useMemo, useCallback, useEffect } from 'react'
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  closestCorners,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core'
+import { AnimatePresence } from 'motion/react'
 import type { Session } from '../types'
 import type { CategoryId } from '../types'
 import type { GroceryItem } from '../types'
 import { CATEGORIES } from '../constants/categories'
 import { useItems } from '../hooks/useItems'
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { updateListName as updateListNameRemote } from '../lib/supabase'
+import { computeReorderPatch, sortItemsInCategory, sortShopItems } from '../lib/itemOrder'
+import { getShopMode, setShopMode } from '../lib/shopMode'
 import { CategorySection } from './CategorySection'
 import { AddItemBar } from './AddItemBar'
 import { ShareSheet } from './ShareSheet'
 import { PasteSheet } from './PasteSheet'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
+import { DragOverlayItem } from './DragOverlayItem'
+import { ShopFlatList } from './ShopFlatList'
+import { DoneCelebration } from './DoneCelebration'
+import { PartnerToast } from './PartnerToast'
 
 interface ListViewProps {
   session: Session
@@ -21,8 +40,30 @@ interface ListViewProps {
 }
 
 export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayName }: ListViewProps) {
-  const { items, loading, error, addItem, addItems, toggleItem, updateItem, deleteItem, clearChecked, refetch } =
-    useItems(session)
+  const [partnerToast, setPartnerToast] = useState<{
+    name: string
+    text: string
+  } | null>(null)
+
+  const handleRemoteInsert = useCallback((item: GroceryItem) => {
+    setPartnerToast({ name: item.added_by ?? 'Someone', text: item.text })
+  }, [])
+
+  const {
+    items,
+    loading,
+    error,
+    addItem,
+    addItems,
+    toggleItem,
+    updateItem,
+    reorderItems,
+    deleteItem,
+    clearChecked,
+    refetch,
+    setDragging,
+    categoryIds,
+  } = useItems(session, { onRemoteInsert: handleRemoteInsert })
   const mainRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
   const [showPaste, setShowPaste] = useState(false)
@@ -31,6 +72,21 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
   const [editName, setEditName] = useState(session.listName)
   const [editDisplayName, setEditDisplayName] = useState(session.displayName)
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
+  const [activeItem, setActiveItem] = useState<GroceryItem | null>(null)
+  const [reorderMode, setReorderMode] = useState(false)
+  const [shopMode, setShopModeState] = useState(() => getShopMode(session.listId))
+  const [showCelebration, setShowCelebration] = useState(false)
+  const prevUncheckedRef = useRef<number | null>(null)
+  const hasLoadedRef = useRef(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    }),
+  )
+
+  useBodyScrollLock(showSettings)
 
   const openSettings = () => {
     setEditName(session.listName)
@@ -44,19 +100,36 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
   })
 
   const grouped = useMemo(() => {
-    const map = new Map<CategoryId, typeof items>()
+    const map = new Map<CategoryId, GroceryItem[]>()
     for (const cat of CATEGORIES) {
-      map.set(cat.id, [])
-    }
-    for (const item of items) {
-      const list = map.get(item.category as CategoryId) ?? map.get('other')!
-      list.push(item)
+      map.set(cat.id, sortItemsInCategory(items, cat.id))
     }
     return map
   }, [items])
 
   const uncheckedCount = items.filter((i) => !i.checked).length
   const checkedCount = items.filter((i) => i.checked).length
+
+  const shopItems = useMemo(
+    () => sortShopItems(items, categoryIds),
+    [items, categoryIds],
+  )
+
+  useEffect(() => {
+    if (loading) return
+
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true
+      prevUncheckedRef.current = uncheckedCount
+      return
+    }
+
+    const prev = prevUncheckedRef.current
+    if (prev !== null && prev >= 1 && uncheckedCount === 0) {
+      setShowCelebration(true)
+    }
+    prevUncheckedRef.current = uncheckedCount
+  }, [uncheckedCount, loading])
 
   const visibleCategories = CATEGORIES.filter((cat) => {
     const catItems = grouped.get(cat.id) ?? []
@@ -84,72 +157,148 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
     await updateItem(id, { text, category })
   }
 
+  const handleDragCancel = useCallback(() => {
+    setDragging(false)
+    setActiveItem(null)
+  }, [setDragging])
+
+  const exitReorderMode = useCallback(() => {
+    if (activeItem) {
+      handleDragCancel()
+    }
+    setReorderMode(false)
+  }, [activeItem, handleDragCancel])
+
+  const toggleShopMode = useCallback(() => {
+    setShopModeState((current) => {
+      const next = !current
+      setShopMode(session.listId, next)
+      if (next) {
+        setReorderMode(false)
+        setDragging(false)
+        setActiveItem(null)
+      }
+      return next
+    })
+  }, [session.listId, setDragging])
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      if (!reorderMode) return
+      setDragging(true)
+      const item = items.find((entry) => entry.id === event.active.id) ?? null
+      setActiveItem(item)
+    },
+    [items, reorderMode, setDragging],
+  )
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      setDragging(false)
+      setActiveItem(null)
+
+      if (!reorderMode) return
+
+      const { active, over } = event
+      if (!over) return
+
+      const patch = computeReorderPatch(
+        String(active.id),
+        String(over.id),
+        items,
+        categoryIds,
+      )
+
+      if (patch) {
+        try {
+          await reorderItems(patch)
+        } catch (err) {
+          console.error('Failed to reorder items:', err)
+        }
+      }
+    },
+    [items, categoryIds, reorderItems, reorderMode],
+  )
+
+  const renderCategory = (
+    cat: (typeof CATEGORIES)[number],
+    forceVisible = false,
+  ) => {
+    const catItems = grouped.get(cat.id) ?? []
+    const filtered = showDone ? catItems : catItems.filter((i) => !i.checked)
+
+    if (filtered.length === 0 && !forceVisible) return null
+
+    return (
+      <CategorySection
+        key={cat.id}
+        categoryId={cat.id}
+        items={filtered}
+        currentUserName={session.displayName}
+        onToggle={toggleItem}
+        onDelete={deleteItem}
+        onEdit={setEditingItem}
+        isDragActive={Boolean(activeItem)}
+        forceVisible={forceVisible}
+        reorderMode={reorderMode}
+      />
+    )
+  }
+
+  const subtitle =
+    uncheckedCount === 0
+      ? 'All done!'
+      : `${uncheckedCount} left`
+
   return (
-    <div className="flex min-h-dvh flex-col bg-cream dark:bg-[#141c27]">
-      <header className="safe-top sticky top-0 z-10 border-b border-cream-dark/80 bg-cream/90 px-4 pb-3 pt-3 backdrop-blur-lg dark:border-[#2d3f54]/80 dark:bg-[#141c27]/90">
-        <div className="flex items-center justify-between">
+    <div className="flex min-h-dvh flex-col bg-cream dark:bg-surface">
+      <header className="safe-top sticky top-0 z-10 border-b border-cream-dark/80 bg-cream/90 backdrop-blur-lg dark:border-border-dark/80 dark:bg-surface/90">
+        <div className="flex items-center gap-2 px-4 pb-2 pt-2">
           <div className="min-w-0 flex-1">
             <button
               type="button"
               onClick={openSettings}
-              className="truncate text-left text-xl font-bold text-[#1e293b] active:opacity-70 dark:text-[#e2e8f0]"
+              className="truncate text-left text-title font-bold text-ink active:opacity-70 dark:text-ink-dark"
             >
               {session.listName}
             </button>
-            <p className="text-sm text-warm-gray dark:text-warm-gray-light">
-              {uncheckedCount === 0
-                ? 'All done!'
-                : `${uncheckedCount} item${uncheckedCount === 1 ? '' : 's'} left`}
+            <p className="truncate text-meta text-warm-gray dark:text-warm-gray-light">
+              {subtitle}
               {' · '}
               {session.displayName}
             </p>
           </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setShowPaste(true)}
-              className="press-scale flex h-11 w-11 items-center justify-center rounded-full text-sage active:bg-sage/10"
-              aria-label="Paste items"
-            >
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <rect x="7" y="4" width="12" height="14" rx="2" />
-                <path d="M5 7H4a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-1" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowShare(true)}
-              className="press-scale flex h-11 w-11 items-center justify-center rounded-full text-sage active:bg-sage/10"
-              aria-label="Share list code"
-            >
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="16" cy="5" r="2.5" />
-                <circle cx="6" cy="11" r="2.5" />
-                <circle cx="16" cy="17" r="2.5" />
-                <path d="M8.2 9.7l5.6-3.2M8.2 12.3l5.6 3.2" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={openSettings}
-              className="press-scale flex h-11 w-11 items-center justify-center rounded-full text-warm-gray active:bg-cream-dark dark:active:bg-[#1e2a3a]"
-              aria-label="Settings"
-            >
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="11" cy="11" r="3" />
-                <path d="M11 2v2M11 18v2M2 11h2M18 11h2M4.9 4.9l1.4 1.4M15.7 15.7l1.4 1.4M4.9 17.1l1.4-1.4M15.7 6.3l1.4-1.4" />
-              </svg>
-            </button>
-          </div>
         </div>
 
+        {shopMode && (
+          <div className="flex items-center border-t border-sage/20 bg-sage/10 px-4 py-1.5 dark:border-sage/30 dark:bg-sage/5">
+            <p className="text-meta font-medium text-sage dark:text-sage-light">
+              Shop mode
+            </p>
+          </div>
+        )}
+
+        {reorderMode && (
+          <div className="flex items-center justify-between gap-3 border-t border-sage/20 bg-sage/10 px-4 py-2 dark:border-sage/30 dark:bg-sage/5">
+            <p className="text-meta text-ink dark:text-ink-dark">
+              Drag items to reorder
+            </p>
+            <button
+              type="button"
+              onClick={exitReorderMode}
+              className="shrink-0 rounded-full bg-sage px-3 py-1 text-meta font-semibold text-white active:bg-sage-dark"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
         {checkedCount > 0 && (
-          <div className="mt-2 flex items-center gap-3">
+          <div className="flex items-center gap-3 px-4 pb-2">
             <button
               type="button"
               onClick={() => setShowDone(!showDone)}
-              className="text-sm font-medium text-sage active:text-sage-dark"
+              className="text-meta font-medium text-sage active:text-sage-dark"
             >
               {showDone ? 'Hide done' : `Show done (${checkedCount})`}
             </button>
@@ -157,7 +306,7 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
               <button
                 type="button"
                 onClick={clearChecked}
-                className="text-sm text-warm-gray-light active:text-red-500"
+                className="text-meta text-warm-gray-light active:text-red-500"
               >
                 Clear done
               </button>
@@ -168,11 +317,11 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
 
       <main
         ref={mainRef}
-        className="relative flex-1 overflow-y-auto px-3 pt-2 pb-4"
+        className="relative flex-1 overflow-y-auto px-3 pt-1.5 pb-3"
         {...handlers}
       >
         <div
-          className="pointer-events-none flex items-center justify-center overflow-hidden text-sm text-sage transition-[height] dark:text-sage-light"
+          className="pointer-events-none flex items-center justify-center overflow-hidden text-meta text-sage transition-[height] dark:text-sage-light"
           style={{ height: pullDistance > 0 || isRefreshing ? Math.max(pullDistance, isRefreshing ? 40 : 0) : 0 }}
           aria-hidden="true"
         >
@@ -186,44 +335,77 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
         </div>
 
         {error && (
-          <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
+          <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">
             Could not load items: {error}
           </p>
         )}
         {loading ? (
           <SkeletonList />
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
             <span className="text-5xl">🥑</span>
-            <p className="mt-4 text-lg font-medium text-[#1e293b] dark:text-[#e2e8f0]">
-              Your list is empty
+            <p className="mt-3 text-title font-medium text-ink dark:text-ink-dark">
+              Nothing on the list yet
             </p>
-            <p className="mt-1 text-sm text-warm-gray dark:text-warm-gray-light">
-              Add something below to get started
+            <p className="mt-1 text-meta text-warm-gray dark:text-warm-gray-light">
+              Add something below, or paste a recipe from ⋯
             </p>
           </div>
+        ) : shopMode ? (
+          <ShopFlatList
+            items={shopItems}
+            currentUserName={session.displayName}
+            onToggle={toggleItem}
+            onDelete={deleteItem}
+            onEdit={setEditingItem}
+          />
         ) : (
-          visibleCategories.map((cat) => {
-            const catItems = grouped.get(cat.id) ?? []
-            const filtered = showDone
-              ? catItems
-              : catItems.filter((i) => !i.checked)
-            return (
-              <CategorySection
-                key={cat.id}
-                categoryId={cat.id}
-                items={filtered}
-                currentUserName={session.displayName}
-                onToggle={toggleItem}
-                onDelete={deleteItem}
-                onEdit={setEditingItem}
-              />
-            )
-          })
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            {(activeItem ? CATEGORIES : visibleCategories).map((cat) =>
+              renderCategory(cat, Boolean(activeItem)),
+            )}
+            <DragOverlay>
+              {activeItem ? (
+                <DragOverlayItem
+                  item={activeItem}
+                  currentUserName={session.displayName}
+                />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         )}
       </main>
 
-      <AddItemBar listId={session.listId} onAdd={addItem} />
+      <AddItemBar
+        listId={session.listId}
+        onAdd={addItem}
+        onPaste={() => setShowPaste(true)}
+        onShare={() => setShowShare(true)}
+        onStartReorder={() => setReorderMode(true)}
+        onToggleShopMode={toggleShopMode}
+        reorderMode={reorderMode}
+        shopMode={shopMode}
+      />
+
+      <AnimatePresence>
+        {partnerToast && (
+          <PartnerToast
+            key={`${partnerToast.name}-${partnerToast.text}`}
+            name={partnerToast.name}
+            text={partnerToast.text}
+            onDismiss={() => setPartnerToast(null)}
+          />
+        )}
+        {showCelebration && (
+          <DoneCelebration onComplete={() => setShowCelebration(false)} />
+        )}
+      </AnimatePresence>
 
       {showShare && (
         <ShareSheet code={session.listCode} onClose={() => setShowShare(false)} />
@@ -252,35 +434,35 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
           onClick={() => setShowSettings(false)}
         >
           <div
-            className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-6 pb-8 pt-6 dark:bg-[#1e2a3a]"
+            className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-cream-dark dark:bg-[#2d3f54]" />
-            <h3 className="text-lg font-semibold text-[#1e293b] dark:text-[#e2e8f0]">
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-cream-dark dark:bg-border-dark" />
+            <h3 className="text-title font-semibold text-ink dark:text-ink-dark">
               Settings
             </h3>
 
-            <label className="mt-5 block">
-              <span className="text-sm font-medium text-warm-gray dark:text-warm-gray-light">
+            <label className="mt-4 block">
+              <span className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
                 List name
               </span>
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-cream-dark bg-cream/50 px-4 py-3 text-base outline-none focus:border-sage dark:border-[#2d3f54] dark:bg-[#141c27] dark:text-[#e2e8f0]"
+                className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
               />
             </label>
 
-            <label className="mt-5 block">
-              <span className="text-sm font-medium text-warm-gray dark:text-warm-gray-light">
+            <label className="mt-4 block">
+              <span className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
                 Your name
               </span>
               <input
                 type="text"
                 value={editDisplayName}
                 onChange={(e) => setEditDisplayName(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-cream-dark bg-cream/50 px-4 py-3 text-base outline-none focus:border-sage dark:border-[#2d3f54] dark:bg-[#141c27] dark:text-[#e2e8f0]"
+                className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
               />
             </label>
 
@@ -288,7 +470,7 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
               type="button"
               onClick={handleSaveSettings}
               disabled={!editDisplayName.trim()}
-              className="press-scale mt-4 w-full rounded-2xl bg-sage py-3.5 font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
+              className="press-scale mt-4 w-full rounded-2xl bg-sage py-2.5 text-sm font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
             >
               Save
             </button>
@@ -299,7 +481,7 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
                 setShowSettings(false)
                 onLeave()
               }}
-              className="mt-3 w-full rounded-2xl py-3.5 font-medium text-red-500 active:bg-red-50 dark:active:bg-red-950/20"
+              className="mt-2 w-full rounded-2xl py-2.5 text-sm font-medium text-red-500 active:bg-red-50 dark:active:bg-red-950/20"
             >
               Leave List
             </button>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { getJoinUrl } from '../lib/joinUrl'
 
 interface ShareSheetProps {
@@ -8,6 +9,7 @@ interface ShareSheetProps {
 }
 
 export function ShareSheet({ code, onClose }: ShareSheetProps) {
+  useBodyScrollLock(true)
   const [copied, setCopied] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
@@ -60,51 +62,51 @@ export function ShareSheet({ code, onClose }: ShareSheetProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
       <div
-        className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-6 pb-8 pt-6 dark:bg-[#1e2a3a]"
+        className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-cream-dark dark:bg-[#2d3f54]" />
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-cream-dark dark:bg-border-dark" />
 
-        <h3 className="text-center text-lg font-semibold text-[#1e293b] dark:text-[#e2e8f0]">
+        <h3 className="text-center text-title font-semibold text-ink dark:text-ink-dark">
           Share your list
         </h3>
-        <p className="mt-2 text-center text-sm text-warm-gray dark:text-warm-gray-light">
+        <p className="mt-1.5 text-center text-meta text-warm-gray dark:text-warm-gray-light">
           Scan the QR code or share the list code
         </p>
 
-        <div className="mt-6 rounded-2xl bg-cream-dark/60 py-6 text-center dark:bg-[#141c27]">
-          <p className="font-mono text-4xl font-bold tracking-[0.2em] text-sage dark:text-sage-light">
+        <div className="mt-4 rounded-2xl bg-cream-dark/60 py-5 text-center dark:bg-surface">
+          <p className="break-all px-3 font-mono text-3xl font-bold tracking-[0.15em] text-sage dark:text-sage-light">
             {formattedCode}
           </p>
         </div>
 
         {qrDataUrl && (
-          <div className="mt-4 flex flex-col items-center">
+          <div className="mt-3 flex flex-col items-center">
             <img
               src={qrDataUrl}
               alt="QR code to join this grocery list"
-              className="rounded-xl bg-white p-2 dark:bg-[#141c27]"
+              className="rounded-xl bg-white p-2 dark:bg-surface"
               width={200}
               height={200}
             />
-            <p className="mt-2 max-w-xs text-center text-xs text-warm-gray-light">
+            <p className="mt-1.5 max-w-xs text-center text-meta text-warm-gray-light">
               Scan to open join flow on another phone
             </p>
           </div>
         )}
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-4 space-y-2.5">
           <button
             type="button"
             onClick={handleShare}
-            className="press-scale w-full rounded-2xl bg-sage py-4 text-lg font-semibold text-white active:bg-sage-dark"
+            className="press-scale w-full rounded-2xl bg-sage py-2.5 text-sm font-semibold text-white active:bg-sage-dark"
           >
             {copied ? 'Copied!' : 'Share Code'}
           </button>
           <button
             type="button"
             onClick={handleCopy}
-            className="press-scale w-full rounded-2xl border border-cream-dark py-4 text-lg font-medium text-warm-gray active:bg-cream-dark/60 dark:border-[#2d3f54] dark:text-warm-gray-light"
+            className="press-scale w-full rounded-2xl border border-cream-dark py-2.5 text-sm font-medium text-warm-gray active:bg-cream-dark/60 dark:border-border-dark dark:text-warm-gray-light"
           >
             Copy to Clipboard
           </button>
