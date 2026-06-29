@@ -37,9 +37,18 @@ interface ListViewProps {
   onLeave: () => void
   onUpdateListName: (name: string) => void
   onUpdateDisplayName: (name: string) => void
+  onCheckForUpdate: () => void
+  updateAvailable: boolean
 }
 
-export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayName }: ListViewProps) {
+export function ListView({
+  session,
+  onLeave,
+  onUpdateListName,
+  onUpdateDisplayName,
+  onCheckForUpdate,
+  updateAvailable,
+}: ListViewProps) {
   const [partnerToast, setPartnerToast] = useState<{
     name: string
     text: string
@@ -71,6 +80,8 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
   const [showDone, setShowDone] = useState(false)
   const [editName, setEditName] = useState(session.listName)
   const [editDisplayName, setEditDisplayName] = useState(session.displayName)
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null)
+  const updateAvailableRef = useRef(updateAvailable)
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
   const [activeItem, setActiveItem] = useState<GroceryItem | null>(null)
   const [reorderMode, setReorderMode] = useState(false)
@@ -88,9 +99,26 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
 
   useBodyScrollLock(showSettings)
 
+  useEffect(() => {
+    updateAvailableRef.current = updateAvailable
+  }, [updateAvailable])
+
+  const handleCheckForUpdate = () => {
+    setUpdateMessage(null)
+    onCheckForUpdate()
+    window.setTimeout(() => {
+      if (updateAvailableRef.current) {
+        setUpdateMessage('Update available — tap Refresh above')
+      } else {
+        setUpdateMessage("You're on the latest version")
+      }
+    }, 1500)
+  }
+
   const openSettings = () => {
     setEditName(session.listName)
     setEditDisplayName(session.displayName)
+    setUpdateMessage(null)
     setShowSettings(true)
   }
 
@@ -474,6 +502,19 @@ export function ListView({ session, onLeave, onUpdateListName, onUpdateDisplayNa
             >
               Save
             </button>
+
+            <button
+              type="button"
+              onClick={handleCheckForUpdate}
+              className="mt-2 w-full rounded-2xl py-2.5 text-sm font-medium text-sage active:bg-sage/10 dark:active:bg-sage/20"
+            >
+              Check for updates
+            </button>
+            {updateMessage && (
+              <p className="mt-1.5 text-center text-meta text-warm-gray dark:text-warm-gray-light">
+                {updateMessage}
+              </p>
+            )}
 
             <button
               type="button"

@@ -1,16 +1,19 @@
 import { useList } from './hooks/useList'
+import { usePwaUpdate } from './hooks/usePwaUpdate'
 import { Welcome } from './components/Welcome'
 import { ListView } from './components/ListView'
+import { UpdateBanner } from './components/UpdateBanner'
 
 export default function App() {
   const list = useList()
+  const pwa = usePwaUpdate()
+
+  let content
 
   if (!list.configured) {
-    return <SetupRequired />
-  }
-
-  if (!list.session) {
-    return (
+    content = <SetupRequired />
+  } else if (!list.session) {
+    content = (
       <Welcome
         loading={list.loading}
         error={list.error}
@@ -19,15 +22,28 @@ export default function App() {
         onClearError={list.clearError}
       />
     )
+  } else {
+    content = (
+      <ListView
+        session={list.session}
+        onLeave={list.leaveList}
+        onUpdateListName={list.updateListName}
+        onUpdateDisplayName={list.updateDisplayName}
+        onCheckForUpdate={pwa.checkForUpdate}
+        updateAvailable={pwa.needRefresh}
+      />
+    )
   }
 
   return (
-    <ListView
-      session={list.session}
-      onLeave={list.leaveList}
-      onUpdateListName={list.updateListName}
-      onUpdateDisplayName={list.updateDisplayName}
-    />
+    <>
+      <UpdateBanner
+        visible={pwa.needRefresh}
+        onRefresh={pwa.refresh}
+        onDismiss={pwa.dismiss}
+      />
+      {content}
+    </>
   )
 }
 
