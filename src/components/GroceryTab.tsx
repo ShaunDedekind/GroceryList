@@ -14,7 +14,6 @@ import { AnimatePresence } from 'motion/react'
 import type { Session, CategoryId, GroceryItem } from '../types'
 import { isCategoryId } from '../constants/categories'
 import { useItems } from '../hooks/useItems'
-import { useCategoryConfig } from '../hooks/useCategoryConfig'
 import { getCategoryEmoji, getCategoryLabel } from '../constants/categories'
 import { saveOverride } from '../lib/categoryOverrides'
 import type { ResolvedCategory } from '../lib/categoryConfig'
@@ -38,6 +37,9 @@ interface GroceryTabProps {
   onRemoteInsert: (item: GroceryItem) => void
   mainRef: React.RefObject<HTMLElement | null>
   onScroll?: () => void
+  resolved: ResolvedCategory[]
+  visibleCategories: ResolvedCategory[]
+  categoryIds: readonly CategoryId[]
 }
 
 export function GroceryTab({
@@ -47,6 +49,9 @@ export function GroceryTab({
   onRemoteInsert,
   mainRef,
   onScroll,
+  resolved,
+  visibleCategories,
+  categoryIds,
 }: GroceryTabProps) {
   const {
     items,
@@ -62,8 +67,6 @@ export function GroceryTab({
     refetch,
     setDragging,
   } = useItems(session, { section: 'grocery', onRemoteInsert })
-  const { resolved, visibleCategories, categoryIds } =
-    useCategoryConfig(session.listId, 'grocery')
 
   const [showShare, setShowShare] = useState(false)
   const [showPaste, setShowPaste] = useState(false)

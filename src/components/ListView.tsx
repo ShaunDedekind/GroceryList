@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { AnimatePresence } from 'motion/react'
-import type { Session, GroceryItem, ListSection } from '../types'
+import type { Session, GroceryItem, ListSection, CategoryId } from '../types'
 import { useActiveTab } from '../hooks/useActiveTab'
 import { useSectionCounts } from '../hooks/useActiveTab'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
@@ -33,7 +33,8 @@ export function ListView({
 }: ListViewProps) {
   const { activeTab, setActiveTab } = useActiveTab(session.listId)
   const counts = useSectionCounts(session.listId)
-  const { groceryResolved, saveConfig } = useCategoryConfig(session.listId, 'grocery')
+  const { groceryResolved, visibleCategories, categoryIds, saveConfig } =
+    useCategoryConfig(session.listId, 'grocery')
 
   const groceryMainRef = useRef<HTMLElement>(null)
   const homeMainRef = useRef<HTMLElement>(null)
@@ -195,6 +196,9 @@ export function ListView({
             onRemoteInsert={handleRemoteInsert('grocery')}
             mainRef={groceryMainRef}
             onScroll={() => saveScrollPosition('grocery')}
+            resolved={groceryResolved}
+            visibleCategories={visibleCategories as ResolvedCategory[]}
+            categoryIds={categoryIds as CategoryId[]}
           />
         ) : (
           <HomeTab
