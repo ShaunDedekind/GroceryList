@@ -12,6 +12,11 @@ const KEYWORD_MAP: Record<CategoryId, string[]> = {
     'potatoes', 'salad', 'spinach', 'strawberry', 'tomato', 'tomatoes', 'veg',
     'vegetable', 'zucchini', 'cilantro', 'parsley', 'basil', 'herbs',
   ],
+  snacks: [
+    'chips', 'crisps', 'popcorn', 'pretzel', 'pretzels', 'cracker', 'crackers',
+    'cookie', 'cookies', 'biscuit', 'biscuits', 'candy', 'chocolate', 'granola bar',
+    'snack', 'snacks', 'trail mix', 'jerky', 'nuts mix',
+  ],
   meat: [
     'bacon', 'beef', 'chicken', 'cod', 'fish', 'ham', 'lamb', 'mince',
     'pork', 'prawn', 'prawns', 'salmon', 'sausage', 'seafood', 'shrimp',
@@ -22,15 +27,20 @@ const KEYWORD_MAP: Record<CategoryId, string[]> = {
     'parmesan', 'yogurt', 'yoghurt', 'halloumi', 'feta', 'cheddar',
     'sour cream', 'cottage cheese',
   ],
+  deli: [
+    'deli', 'hummus', 'rotisserie', 'prepared', 'coleslaw', 'mac and cheese',
+    'potato salad', 'sushi', 'sandwich platter', 'antipasto', 'olives',
+    'dip', 'guacamole', 'salsa',
+  ],
   bakery: [
     'bagel', 'bagels', 'baguette', 'bread', 'bun', 'buns', 'cake', 'croissant',
     'muffin', 'pastry', 'roll', 'rolls', 'toast', 'tortilla', 'tortillas',
     'pita', 'wrap', 'wraps',
   ],
   pantry: [
-    'beans', 'cereal', 'chips', 'crisps', 'flour', 'honey', 'jam', 'noodle',
+    'beans', 'cereal', 'flour', 'honey', 'jam', 'noodle',
     'noodles', 'nut', 'nuts', 'oil', 'pasta', 'peanut', 'peanut butter',
-    'rice', 'salt', 'sauce', 'snack', 'soup', 'spice', 'sugar', 'tinned',
+    'rice', 'salt', 'sauce', 'soup', 'spice', 'sugar', 'tinned',
     'tuna can', 'coconut milk', 'broth', 'stock', 'vinegar', 'olive oil',
     'canned', 'lentils', 'chickpeas',
   ],
@@ -42,13 +52,16 @@ const KEYWORD_MAP: Record<CategoryId, string[]> = {
     'juice', 'soda', 'tea', 'water', 'wine', 'kombucha', 'seltzer', 'sparkling',
     'coke zero', 'diet coke', 'coca cola', 'energy drink', 'ginger ale',
   ],
-  household: [
-    'bag', 'bags', 'bleach', 'cleaner', 'detergent', 'diapers', 'foil',
-    'garbage', 'napkin', 'napkins', 'paper towel', 'soap', 'sponge', 'tissue',
-    'toilet', 'toothpaste', 'towel', 'trash', 'laundry', 'dish soap',
+  personal_care: [
     'cotton tips', 'cotton buds', 'q tips', 'q-tips', 'qtips', 'buds',
     'shampoo', 'conditioner', 'deodorant', 'razor', 'bandage', 'vitamin',
-    'lotion', 'sanitizer',
+    'lotion', 'sanitizer', 'toothpaste', 'toothbrush', 'sunscreen', 'soap bar',
+    'body wash', 'moisturizer', 'tampon', 'tampons', 'pads',
+  ],
+  household: [
+    'bag', 'bags', 'bleach', 'cleaner', 'detergent', 'diapers', 'foil',
+    'garbage', 'napkin', 'napkins', 'paper towel', 'sponge', 'tissue',
+    'toilet', 'towel', 'trash', 'laundry', 'dish soap',
   ],
   other: [],
 }

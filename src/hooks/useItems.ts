@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CategoryId, GroceryItem, Session } from '../types'
-import { CATEGORIES } from '../constants/categories'
 import {
   applyOrderUpdates,
   nextSortOrder,
@@ -11,8 +10,6 @@ import { supabase } from '../lib/supabase'
 import { getSession } from '../lib/storage'
 import { saveRecentItem } from '../lib/recentItems'
 import { saveOverride } from '../lib/categoryOverrides'
-
-const CATEGORY_IDS = CATEGORIES.map((cat) => cat.id)
 
 async function loadItems(listId: string) {
   return supabase
@@ -338,6 +335,5 @@ export function useItems(
     clearChecked,
     refetch,
     setDragging,
-    categoryIds: CATEGORY_IDS,
   }
 }

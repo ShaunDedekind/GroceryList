@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { CategoryId } from '../types'
-import { CATEGORIES, DEFAULT_CATEGORY, getCategoryEmoji } from '../constants/categories'
+import { DEFAULT_CATEGORY, getCategoryEmoji } from '../constants/categories'
+import type { ResolvedCategory } from '../lib/categoryConfig'
 import { hapticLight } from '../lib/haptics'
 import { springSnappy } from '../lib/motion'
 import { guessCategory } from '../lib/categoryGuess'
@@ -9,9 +10,11 @@ import { saveOverride } from '../lib/categoryOverrides'
 import { parseItemText } from '../lib/parseItemText'
 import { getRecentItems, type RecentItem } from '../lib/recentItems'
 import { ListActionMenu } from './ListActionMenu'
+import { CategoryPicker } from './CategoryPicker'
 
 interface AddItemBarProps {
   listId: string
+  categories: ResolvedCategory[]
   onAdd: (text: string, category: CategoryId) => Promise<void>
   onPaste: () => void
   onShare: () => void
@@ -23,6 +26,7 @@ interface AddItemBarProps {
 
 export function AddItemBar({
   listId,
+  categories,
   onAdd,
   onPaste,
   onShare,
@@ -48,7 +52,19 @@ export function AddItemBar({
   const moreButtonRef = useRef<HTMLButtonElement>(null)
   const reducedMotion = useReducedMotion()
 
-  const selected = CATEGORIES.find((c) => c.id === category)!
+  const defaultCategory =
+    categories.find((entry) => entry.id === DEFAULT_CATEGORY)?.id ??
+    categories[0]?.id ??
+    DEFAULT_CATEGORY
+
+  const selected =
+    categories.find((entry) => entry.id === category) ??
+    categories[0] ?? {
+      id: DEFAULT_CATEGORY,
+      label: 'Other',
+      emoji: '📦',
+      visible: true,
+    }
   const isSuggested =
     suggestedCategory !== null && category === suggestedCategory && !categoryIsManual
 
@@ -78,7 +94,7 @@ export function AddItemBar({
       setText('')
       setCategoryIsManual(false)
       setSuggestedCategory(null)
-      setCategory(DEFAULT_CATEGORY)
+      setCategory(defaultCategory)
       refreshRecent()
       hapticLight()
       setJustAdded(true)
@@ -150,25 +166,13 @@ export function AddItemBar({
   return (
     <div className="safe-bottom relative z-30 border-t border-cream-dark bg-white/90 px-4 py-2.5 backdrop-blur-lg dark:border-border-dark dark:bg-surface/90">
       {showCategories && (
-        <div
-          className="mb-2 grid grid-cols-3 gap-1.5"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => handleCategoryPick(cat.id)}
-              className={`press-scale flex items-center gap-1 rounded-xl px-2 py-2 text-meta font-medium transition-colors ${
-                category === cat.id
-                  ? 'bg-sage/15 text-sage-dark dark:text-sage-light'
-                  : 'bg-cream-dark/60 text-warm-gray active:bg-cream-dark dark:bg-surface-raised dark:text-warm-gray-light'
-              }`}
-            >
-              <span>{cat.emoji}</span>
-              <span className="truncate">{cat.label.split(' ')[0]}</span>
-            </button>
-          ))}
+        <div onClick={(e) => e.stopPropagation()}>
+          <CategoryPicker
+            categories={categories}
+            selected={category}
+            onSelect={handleCategoryPick}
+            className="mb-2"
+          />
         </div>
       )}
 

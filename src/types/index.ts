@@ -1,18 +1,28 @@
 export type CategoryId =
   | 'fruit_veg'
+  | 'snacks'
   | 'meat'
   | 'dairy'
+  | 'deli'
   | 'bakery'
   | 'pantry'
   | 'frozen'
   | 'drinks'
+  | 'personal_care'
   | 'household'
   | 'other'
+
+export interface CategoryConfig {
+  order?: CategoryId[]
+  hidden?: CategoryId[]
+  labels?: Partial<Record<CategoryId, string>>
+}
 
 export interface GroceryList {
   id: string
   code: string
   name: string
+  category_config?: CategoryConfig
   created_at: string
 }
 

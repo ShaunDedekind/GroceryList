@@ -8,12 +8,15 @@ const CORS_HEADERS = {
 
 const VALID_CATEGORIES = new Set([
   'fruit_veg',
+  'snacks',
   'meat',
   'dairy',
+  'deli',
   'bakery',
   'pantry',
   'frozen',
   'drinks',
+  'personal_care',
   'household',
   'other',
 ])
@@ -26,16 +29,19 @@ const RATE_WINDOW_MS = 24 * 60 * 60 * 1000
 const SYSTEM_PROMPT = `You extract grocery items from pasted text (shopping lists, recipes, meal plans).
 Return ONLY valid JSON with this exact shape: {"items":[{"text":"item name","category":"category_id"}]}
 Use short grocery item names only — no amounts or units (e.g. "cumin" not "1 tsp cumin", "eggs" not "2 eggs"). Strip cooking instructions and prep notes.
-Categories must be exactly one of: fruit_veg, meat, dairy, bakery, pantry, frozen, drinks, household, other.
+Categories must be exactly one of: fruit_veg, snacks, meat, dairy, deli, bakery, pantry, frozen, drinks, personal_care, household, other.
 Category guide:
 - fruit_veg: produce, herbs, fresh vegetables and fruit
+- snacks: chips, crackers, cookies, candy, snack foods
 - meat: meat, poultry, fish, seafood
 - dairy: milk, cheese, eggs, yogurt, butter
+- deli: prepared foods, hummus, rotisserie chicken, deli salads
 - bakery: bread, buns, pastries, tortillas
 - pantry: dry goods, canned goods, pasta, rice, spices, oils, sauces
 - frozen: frozen foods, ice cream
 - drinks: beverages including alcohol
-- household: cleaning, paper goods, toiletries
+- personal_care: shampoo, vitamins, cotton tips, toiletries
+- household: cleaning, paper goods, laundry
 - other: anything else
 Max 50 items. Skip non-food items unless clearly on a shopping list.`
 

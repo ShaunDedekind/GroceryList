@@ -2,6 +2,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { getSession } from './storage'
 import type { CategoryId } from '../types'
 import type { ParsedItem } from './parseItems'
+import type { CategoryConfig } from '../types'
+import { parseCategoryConfig } from './categoryConfig'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -82,6 +84,29 @@ export async function updateListName(listId: string, name: string) {
   const { error } = await supabase
     .from('lists')
     .update({ name })
+    .eq('id', listId)
+
+  if (error) throw error
+}
+
+export async function fetchCategoryConfig(listId: string): Promise<CategoryConfig> {
+  const { data, error } = await supabase
+    .from('lists')
+    .select('category_config')
+    .eq('id', listId)
+    .single()
+
+  if (error) throw error
+  return parseCategoryConfig(data?.category_config)
+}
+
+export async function updateCategoryConfig(
+  listId: string,
+  config: CategoryConfig,
+): Promise<void> {
+  const { error } = await supabase
+    .from('lists')
+    .update({ category_config: config })
     .eq('id', listId)
 
   if (error) throw error

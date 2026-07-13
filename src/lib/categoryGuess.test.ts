@@ -28,12 +28,20 @@ describe('guessCategory', () => {
     expect(guessCategory('coke zero')).toBe('drinks')
   })
 
-  it('classifies cotton tips as household', () => {
-    expect(guessCategory('cotton tips')).toBe('household')
+  it('classifies cotton tips as personal care', () => {
+    expect(guessCategory('cotton tips')).toBe('personal_care')
   })
 
-  it('classifies q-tips as household via hyphen normalization', () => {
-    expect(guessCategory('q-tips')).toBe('household')
+  it('classifies q-tips as personal care via hyphen normalization', () => {
+    expect(guessCategory('q-tips')).toBe('personal_care')
+  })
+
+  it('classifies chips as snacks', () => {
+    expect(guessCategory('chips')).toBe('snacks')
+  })
+
+  it('classifies hummus as deli', () => {
+    expect(guessCategory('hummus')).toBe('deli')
   })
 
   it('prefers override over keywords', () => {

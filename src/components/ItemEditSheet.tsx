@@ -1,23 +1,45 @@
 import { useState } from 'react'
 import type { CategoryId, GroceryItem } from '../types'
-import { CATEGORIES } from '../constants/categories'
+import { getCategoryEmoji, getCategoryLabel } from '../constants/categories'
+import type { ResolvedCategory } from '../lib/categoryConfig'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { saveOverride } from '../lib/categoryOverrides'
 import { hapticLight } from '../lib/haptics'
+import { CategoryPicker } from './CategoryPicker'
 
 interface ItemEditSheetProps {
   item: GroceryItem
   listId: string
+  categories: ResolvedCategory[]
   onSave: (id: string, text: string, category: CategoryId) => Promise<void>
   onClose: () => void
 }
 
-export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetProps) {
+export function ItemEditSheet({
+  item,
+  listId,
+  categories,
+  onSave,
+  onClose,
+}: ItemEditSheetProps) {
   useBodyScrollLock(true)
   const [text, setText] = useState(item.text)
   const [category, setCategory] = useState<CategoryId>(item.category as CategoryId)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const pickerCategories =
+    categories.some((entry) => entry.id === category)
+      ? categories
+      : [
+          ...categories,
+          {
+            id: category,
+            label: getCategoryLabel(category),
+            emoji: getCategoryEmoji(category),
+            visible: false,
+          } satisfies ResolvedCategory,
+        ]
 
   const handleSave = async () => {
     const trimmed = text.trim()
@@ -43,7 +65,7 @@ export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetPr
       onClick={onClose}
     >
       <div
-        className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
+        className="safe-bottom max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-cream-dark dark:bg-border-dark" />
@@ -67,23 +89,12 @@ export function ItemEditSheet({ item, listId, onSave, onClose }: ItemEditSheetPr
         <p className="mt-4 text-meta font-medium text-warm-gray dark:text-warm-gray-light">
           Category
         </p>
-        <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setCategory(cat.id)}
-              className={`press-scale flex items-center gap-1 rounded-xl px-2 py-2 text-meta font-medium transition-colors ${
-                category === cat.id
-                  ? 'bg-sage/15 text-sage-dark dark:text-sage-light'
-                  : 'bg-cream-dark/60 text-warm-gray active:bg-cream-dark dark:bg-surface dark:text-warm-gray-light'
-              }`}
-            >
-              <span>{cat.emoji}</span>
-              <span className="truncate">{cat.label.split(' ')[0]}</span>
-            </button>
-          ))}
-        </div>
+        <CategoryPicker
+          categories={pickerCategories}
+          selected={category}
+          onSelect={setCategory}
+          className="mt-1.5"
+        />
 
         {error && (
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">

@@ -14,8 +14,11 @@ import { AnimatePresence } from 'motion/react'
 import type { Session } from '../types'
 import type { CategoryId } from '../types'
 import type { GroceryItem } from '../types'
-import { CATEGORIES } from '../constants/categories'
+import { isCategoryId } from '../constants/categories'
 import { useItems } from '../hooks/useItems'
+import { useCategoryConfig } from '../hooks/useCategoryConfig'
+import { buildCategoryConfigFromResolved } from '../lib/categoryConfig'
+import type { ResolvedCategory } from '../lib/categoryConfig'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { updateListName as updateListNameRemote } from '../lib/supabase'
@@ -31,6 +34,9 @@ import { DragOverlayItem } from './DragOverlayItem'
 import { ShopFlatList } from './ShopFlatList'
 import { DoneCelebration } from './DoneCelebration'
 import { PartnerToast } from './PartnerToast'
+import {
+  AisleSectionsSettings,
+} from './AisleSectionsSettings'
 
 interface ListViewProps {
   session: Session
@@ -71,8 +77,13 @@ export function ListView({
     clearChecked,
     refetch,
     setDragging,
-    categoryIds,
   } = useItems(session, { onRemoteInsert: handleRemoteInsert })
+  const {
+    resolved,
+    visibleCategories,
+    categoryIds,
+    saveConfig,
+  } = useCategoryConfig(session.listId)
   const mainRef = useRef<HTMLElement>(null)
   const [showShare, setShowShare] = useState(false)
   const [showPaste, setShowPaste] = useState(false)
@@ -129,11 +140,17 @@ export function ListView({
 
   const grouped = useMemo(() => {
     const map = new Map<CategoryId, GroceryItem[]>()
-    for (const cat of CATEGORIES) {
+    for (const cat of resolved) {
       map.set(cat.id, sortItemsInCategory(items, cat.id))
     }
+    for (const item of items) {
+      const id = isCategoryId(item.category) ? item.category : 'other'
+      if (!map.has(id)) {
+        map.set(id, sortItemsInCategory(items, id))
+      }
+    }
     return map
-  }, [items])
+  }, [items, resolved])
 
   const uncheckedCount = items.filter((i) => !i.checked).length
   const checkedCount = items.filter((i) => i.checked).length
@@ -159,12 +176,18 @@ export function ListView({
     prevUncheckedRef.current = uncheckedCount
   }, [uncheckedCount, loading])
 
-  const visibleCategories = CATEGORIES.filter((cat) => {
+  const visibleSections = visibleCategories.filter((cat) => {
     const catItems = grouped.get(cat.id) ?? []
     if (catItems.length === 0) return false
     if (!showDone && catItems.every((i) => i.checked)) return false
     return true
   })
+
+  const dragSections = visibleCategories
+
+  const handleSaveAisleSections = async (next: ResolvedCategory[]) => {
+    await saveConfig(buildCategoryConfigFromResolved(next))
+  }
 
   const handleSaveSettings = async () => {
     const name = editName.trim() || 'Our Grocery List'
@@ -249,7 +272,7 @@ export function ListView({
   )
 
   const renderCategory = (
-    cat: (typeof CATEGORIES)[number],
+    cat: ResolvedCategory,
     forceVisible = false,
   ) => {
     const catItems = grouped.get(cat.id) ?? []
@@ -261,6 +284,7 @@ export function ListView({
       <CategorySection
         key={cat.id}
         categoryId={cat.id}
+        categoryLabel={cat.label}
         items={filtered}
         currentUserName={session.displayName}
         onToggle={toggleItem}
@@ -395,7 +419,7 @@ export function ListView({
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            {(activeItem ? CATEGORIES : visibleCategories).map((cat) =>
+            {(activeItem ? dragSections : visibleSections).map((cat) =>
               renderCategory(cat, Boolean(activeItem)),
             )}
             <DragOverlay>
@@ -412,6 +436,7 @@ export function ListView({
 
       <AddItemBar
         listId={session.listId}
+        categories={visibleCategories}
         onAdd={addItem}
         onPaste={() => setShowPaste(true)}
         onShare={() => setShowShare(true)}
@@ -451,6 +476,7 @@ export function ListView({
         <ItemEditSheet
           item={editingItem}
           listId={session.listId}
+          categories={visibleCategories}
           onSave={handleSaveItem}
           onClose={() => setEditingItem(null)}
         />
@@ -462,7 +488,7 @@ export function ListView({
           onClick={() => setShowSettings(false)}
         >
           <div
-            className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
+            className="safe-bottom max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-cream-dark dark:bg-border-dark" />
@@ -493,6 +519,11 @@ export function ListView({
                 className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
               />
             </label>
+
+            <AisleSectionsSettings
+              categories={resolved}
+              onSave={handleSaveAisleSections}
+            />
 
             <button
               type="button"
