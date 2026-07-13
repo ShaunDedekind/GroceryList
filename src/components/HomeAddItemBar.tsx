@@ -1,68 +1,58 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import type { CategoryId } from '../types'
-import { DEFAULT_CATEGORY, getCategoryEmoji } from '../constants/categories'
-import type { ResolvedCategory } from '../lib/categoryConfig'
+import type { HomeCategoryId } from '../types'
+import {
+  DEFAULT_HOME_CATEGORY,
+  getHomeCategoryEmoji,
+} from '../constants/homeCategories'
+import type { ResolvedHomeCategory } from '../lib/homeCategoryConfig'
 import { hapticLight } from '../lib/haptics'
 import { springSnappy } from '../lib/motion'
-import { guessCategory } from '../lib/categoryGuess'
-import { saveOverride } from '../lib/categoryOverrides'
+import { guessHomeCategory } from '../lib/homeCategoryGuess'
+import { saveHomeOverride } from '../lib/homeCategoryOverrides'
 import { parseItemText } from '../lib/parseItemText'
-import { getRecentItems, type RecentItem } from '../lib/recentItems'
-import { ListActionMenu } from './ListActionMenu'
+import { getRecentHomeItems, type RecentHomeItem } from '../lib/recentItems'
 import { CategoryPicker } from './CategoryPicker'
 
-interface AddItemBarProps {
+interface HomeAddItemBarProps {
   listId: string
-  categories: ResolvedCategory[]
-  onAdd: (text: string, category: CategoryId) => Promise<void>
-  onPaste: () => void
-  onShare: () => void
-  onStartReorder: () => void
-  onToggleShopMode: () => void
-  reorderMode: boolean
-  shopMode: boolean
+  categories: ResolvedHomeCategory[]
+  onAdd: (text: string, category: HomeCategoryId) => Promise<void>
 }
 
-export function AddItemBar({
+export function HomeAddItemBar({
   listId,
   categories,
   onAdd,
-  onPaste,
-  onShare,
-  onStartReorder,
-  onToggleShopMode,
-  reorderMode,
-  shopMode,
-}: AddItemBarProps) {
+}: HomeAddItemBarProps) {
   const [text, setText] = useState('')
-  const [category, setCategory] = useState<CategoryId>(DEFAULT_CATEGORY)
-  const [suggestedCategory, setSuggestedCategory] = useState<CategoryId | null>(null)
+  const [category, setCategory] = useState<HomeCategoryId>(DEFAULT_HOME_CATEGORY)
+  const [suggestedCategory, setSuggestedCategory] = useState<HomeCategoryId | null>(
+    null,
+  )
   const [showCategories, setShowCategories] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [justAdded, setJustAdded] = useState(false)
-  const [recentItems, setRecentItems] = useState<RecentItem[]>(() =>
-    getRecentItems(listId),
+  const [recentItems, setRecentItems] = useState<RecentHomeItem[]>(() =>
+    getRecentHomeItems(listId),
   )
   const [categoryIsManual, setCategoryIsManual] = useState(false)
   const [showHints, setShowHints] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const moreButtonRef = useRef<HTMLButtonElement>(null)
   const reducedMotion = useReducedMotion()
 
   const defaultCategory =
-    categories.find((entry) => entry.id === DEFAULT_CATEGORY)?.id ??
+    categories.find((entry) => entry.id === DEFAULT_HOME_CATEGORY)?.id ??
     categories[0]?.id ??
-    DEFAULT_CATEGORY
+    DEFAULT_HOME_CATEGORY
 
   const selected =
     categories.find((entry) => entry.id === category) ??
     categories[0] ?? {
-      id: DEFAULT_CATEGORY,
+      id: DEFAULT_HOME_CATEGORY,
       label: 'Other',
-      emoji: '📦',
+      emoji: '📋',
       visible: true,
     }
   const isSuggested =
@@ -77,7 +67,7 @@ export function AddItemBar({
   }, [text, recentItems])
 
   const refreshRecent = useCallback(() => {
-    setRecentItems(getRecentItems(listId))
+    setRecentItems(getRecentHomeItems(listId))
   }, [listId])
 
   const handleSubmit = async () => {
@@ -90,7 +80,7 @@ export function AddItemBar({
       if (!parsedText) return
 
       await onAdd(parsedText, category)
-      saveOverride(listId, parsedText, category)
+      saveHomeOverride(listId, parsedText, category)
       setText('')
       setCategoryIsManual(false)
       setSuggestedCategory(null)
@@ -111,24 +101,24 @@ export function AddItemBar({
     setText(value)
     setShowHints(value.trim().length >= 2)
     if (categoryIsManual) return
-    const guessed = guessCategory(value, listId)
+    const guessed = guessHomeCategory(value, listId)
     setSuggestedCategory(guessed)
     if (guessed) setCategory(guessed)
   }
 
   const handleCategoryPick = (catId: string) => {
-    const categoryId = catId as CategoryId
+    const homeId = catId as HomeCategoryId
     setCategoryIsManual(true)
     setSuggestedCategory(null)
-    setCategory(categoryId)
+    setCategory(homeId)
     setShowCategories(false)
     if (text.trim()) {
       const { text: parsedText } = parseItemText(text)
-      if (parsedText) saveOverride(listId, parsedText, categoryId)
+      if (parsedText) saveHomeOverride(listId, parsedText, homeId)
     }
   }
 
-  const handleRecentSelect = (item: RecentItem) => {
+  const handleRecentSelect = (item: RecentHomeItem) => {
     setCategoryIsManual(true)
     setSuggestedCategory(null)
     setText(item.text)
@@ -137,32 +127,12 @@ export function AddItemBar({
     inputRef.current?.focus()
   }
 
-  const handleRecentAdd = async (item: RecentItem) => {
-    try {
-      await onAdd(item.text, item.category)
-      saveOverride(listId, item.text, item.category)
-      refreshRecent()
-      hapticLight()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to add item')
-    }
-  }
-
   useEffect(() => {
     if (showCategories) return
     const handleClick = () => setShowCategories(false)
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [showCategories])
-
-  useEffect(() => {
-    if (!menuOpen) return
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false)
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [menuOpen])
 
   return (
     <div className="relative z-30 border-t border-cream-dark bg-white/90 px-4 py-2.5 backdrop-blur-lg dark:border-border-dark dark:bg-surface/90">
@@ -189,14 +159,12 @@ export function AddItemBar({
           onClick={(e) => {
             e.stopPropagation()
             setShowCategories(!showCategories)
-            setMenuOpen(false)
           }}
           className={`press-scale flex h-10 shrink-0 items-center gap-1 rounded-xl px-2.5 text-meta font-medium active:bg-cream-dark/80 dark:bg-surface-raised dark:text-warm-gray-light ${
             isSuggested
               ? 'bg-sage/15 text-sage-dark ring-2 ring-sage/30 dark:text-sage-light'
               : 'bg-cream-dark text-warm-gray'
           }`}
-          title={isSuggested ? 'Category suggested' : undefined}
         >
           <span>{selected.emoji}</span>
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
@@ -218,7 +186,7 @@ export function AddItemBar({
                 handleSubmit()
               }
             }}
-            placeholder="Add item…"
+            placeholder="Fix, buy, or remember at home…"
             enterKeyHint="done"
             className="w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
           />
@@ -233,51 +201,13 @@ export function AddItemBar({
                   onClick={() => handleRecentSelect(item)}
                   className="press-scale flex w-full items-center gap-2 px-3 py-2 text-left text-body text-ink active:bg-cream-dark/60 dark:text-ink-dark dark:active:bg-surface"
                 >
-                  <span>{getCategoryEmoji(item.category)}</span>
+                  <span>{getHomeCategoryEmoji(item.category)}</span>
                   <span className="truncate">{item.text}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
-
-        <button
-          ref={moreButtonRef}
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            setMenuOpen((open) => !open)
-            setShowCategories(false)
-          }}
-          aria-label="More actions"
-          aria-expanded={menuOpen}
-          aria-haspopup="menu"
-          className={`press-scale flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-warm-gray active:bg-cream-dark/80 dark:text-warm-gray-light dark:active:bg-surface-raised ${
-            reorderMode || shopMode
-              ? 'bg-sage/15 ring-2 ring-sage/30 text-sage dark:text-sage-light'
-              : 'bg-cream-dark dark:bg-surface-raised'
-          }`}
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">
-            <circle cx="4" cy="9" r="1.5" />
-            <circle cx="9" cy="9" r="1.5" />
-            <circle cx="14" cy="9" r="1.5" />
-          </svg>
-        </button>
-
-        <ListActionMenu
-          open={menuOpen}
-          reorderMode={reorderMode}
-          shopMode={shopMode}
-          anchorRef={moreButtonRef}
-          recentItems={recentItems}
-          onClose={() => setMenuOpen(false)}
-          onPaste={onPaste}
-          onShare={onShare}
-          onStartReorder={onStartReorder}
-          onToggleShopMode={onToggleShopMode}
-          onRecentAdd={handleRecentAdd}
-        />
 
         <motion.button
           type="button"

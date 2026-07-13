@@ -1,3 +1,5 @@
+export type ListSection = 'grocery' | 'home'
+
 export type CategoryId =
   | 'fruit_veg'
   | 'snacks'
@@ -12,10 +14,28 @@ export type CategoryId =
   | 'household'
   | 'other'
 
+export type HomeCategoryId =
+  | 'maintenance'
+  | 'cleaning'
+  | 'supplies'
+  | 'projects'
+  | 'garden'
+  | 'kids'
+  | 'pets'
+  | 'other'
+
+export type ItemCategoryId = CategoryId | HomeCategoryId
+
 export interface CategoryConfig {
   order?: CategoryId[]
   hidden?: CategoryId[]
   labels?: Partial<Record<CategoryId, string>>
+}
+
+export interface HomeCategoryConfig {
+  order?: HomeCategoryId[]
+  hidden?: HomeCategoryId[]
+  labels?: Partial<Record<HomeCategoryId, string>>
 }
 
 export interface GroceryList {
@@ -23,13 +43,15 @@ export interface GroceryList {
   code: string
   name: string
   category_config?: CategoryConfig
+  home_category_config?: HomeCategoryConfig
   created_at: string
 }
 
 export interface GroceryItem {
   id: string
   list_id: string
-  category: CategoryId
+  section: ListSection
+  category: ItemCategoryId
   text: string
   checked: boolean
   added_by: string | null

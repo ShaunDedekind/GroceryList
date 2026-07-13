@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react'
-import type { CategoryId } from '../types'
-import type { ResolvedCategory } from '../lib/categoryConfig'
+import type { DisplayCategory } from './listTabTypes'
 
 const PRIMARY_COUNT = 6
 
 interface CategoryPickerProps {
-  categories: ResolvedCategory[]
-  selected: CategoryId
-  onSelect: (id: CategoryId) => void
+  categories: DisplayCategory[]
+  selected: string
+  onSelect: (id: string) => void
   className?: string
 }
 

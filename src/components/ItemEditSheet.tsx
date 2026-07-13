@@ -1,18 +1,19 @@
 import { useState } from 'react'
-import type { CategoryId, GroceryItem } from '../types'
-import { getCategoryEmoji, getCategoryLabel } from '../constants/categories'
-import type { ResolvedCategory } from '../lib/categoryConfig'
+import type { GroceryItem } from '../types'
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
-import { saveOverride } from '../lib/categoryOverrides'
 import { hapticLight } from '../lib/haptics'
 import { CategoryPicker } from './CategoryPicker'
+import type { DisplayCategory } from './listTabTypes'
 
 interface ItemEditSheetProps {
   item: GroceryItem
   listId: string
-  categories: ResolvedCategory[]
-  onSave: (id: string, text: string, category: CategoryId) => Promise<void>
+  categories: DisplayCategory[]
+  onSave: (id: string, text: string, category: string) => Promise<void>
   onClose: () => void
+  getCategoryLabel?: (id: string) => string
+  getCategoryEmoji?: (id: string) => string
+  onSaveOverride?: (listId: string, text: string, category: string) => void
 }
 
 export function ItemEditSheet({
@@ -21,10 +22,13 @@ export function ItemEditSheet({
   categories,
   onSave,
   onClose,
+  getCategoryLabel,
+  getCategoryEmoji,
+  onSaveOverride,
 }: ItemEditSheetProps) {
   useBodyScrollLock(true)
   const [text, setText] = useState(item.text)
-  const [category, setCategory] = useState<CategoryId>(item.category as CategoryId)
+  const [category, setCategory] = useState(item.category)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,10 +39,10 @@ export function ItemEditSheet({
           ...categories,
           {
             id: category,
-            label: getCategoryLabel(category),
-            emoji: getCategoryEmoji(category),
+            label: getCategoryLabel?.(category) ?? category,
+            emoji: getCategoryEmoji?.(category) ?? '📦',
             visible: false,
-          } satisfies ResolvedCategory,
+          },
         ]
 
   const handleSave = async () => {
@@ -49,7 +53,7 @@ export function ItemEditSheet({
     setError(null)
     try {
       await onSave(item.id, trimmed, category)
-      saveOverride(listId, trimmed, category)
+      onSaveOverride?.(listId, trimmed, category)
       hapticLight()
       onClose()
     } catch (e) {
@@ -92,7 +96,7 @@ export function ItemEditSheet({
         <CategoryPicker
           categories={pickerCategories}
           selected={category}
-          onSelect={setCategory}
+          onSelect={(id) => setCategory(id as typeof category)}
           className="mt-1.5"
         />
 

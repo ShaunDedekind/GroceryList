@@ -1,42 +1,18 @@
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react'
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  TouchSensor,
-  closestCorners,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { AnimatePresence } from 'motion/react'
-import type { Session } from '../types'
-import type { CategoryId } from '../types'
-import type { GroceryItem } from '../types'
-import { isCategoryId } from '../constants/categories'
-import { useItems } from '../hooks/useItems'
+import type { Session, GroceryItem, ListSection } from '../types'
+import { useActiveTab } from '../hooks/useActiveTab'
+import { useSectionCounts } from '../hooks/useActiveTab'
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
+import { updateListName as updateListNameRemote } from '../lib/supabase'
 import { buildCategoryConfigFromResolved } from '../lib/categoryConfig'
 import type { ResolvedCategory } from '../lib/categoryConfig'
-import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
-import { usePullToRefresh } from '../hooks/usePullToRefresh'
-import { updateListName as updateListNameRemote } from '../lib/supabase'
-import { computeReorderPatch, sortItemsInCategory, sortShopItems } from '../lib/itemOrder'
-import { getShopMode, setShopMode } from '../lib/shopMode'
-import { CategorySection } from './CategorySection'
-import { AddItemBar } from './AddItemBar'
-import { ShareSheet } from './ShareSheet'
-import { PasteSheet } from './PasteSheet'
-import { ItemEditSheet } from './ItemEditSheet'
-import { SkeletonList } from './SkeletonList'
-import { DragOverlayItem } from './DragOverlayItem'
-import { ShopFlatList } from './ShopFlatList'
-import { DoneCelebration } from './DoneCelebration'
+import { GroceryTab } from './GroceryTab'
+import { HomeTab } from './HomeTab'
+import { TabBar } from './TabBar'
 import { PartnerToast } from './PartnerToast'
-import {
-  AisleSectionsSettings,
-} from './AisleSectionsSettings'
+import { AisleSectionsSettings } from './AisleSectionsSettings'
 
 interface ListViewProps {
   session: Session
@@ -55,64 +31,74 @@ export function ListView({
   onCheckForUpdate,
   updateAvailable,
 }: ListViewProps) {
+  const { activeTab, setActiveTab } = useActiveTab(session.listId)
+  const counts = useSectionCounts(session.listId)
+  const { groceryResolved, saveConfig } = useCategoryConfig(session.listId, 'grocery')
+
+  const groceryMainRef = useRef<HTMLElement>(null)
+  const homeMainRef = useRef<HTMLElement>(null)
+  const scrollPositions = useRef<Record<ListSection, number>>({
+    grocery: 0,
+    home: 0,
+  })
+
   const [partnerToast, setPartnerToast] = useState<{
     name: string
     text: string
+    section: ListSection
   } | null>(null)
-
-  const handleRemoteInsert = useCallback((item: GroceryItem) => {
-    setPartnerToast({ name: item.added_by ?? 'Someone', text: item.text })
-  }, [])
-
-  const {
-    items,
-    loading,
-    error,
-    addItem,
-    addItems,
-    toggleItem,
-    updateItem,
-    reorderItems,
-    deleteItem,
-    clearChecked,
-    refetch,
-    setDragging,
-  } = useItems(session, { onRemoteInsert: handleRemoteInsert })
-  const {
-    resolved,
-    visibleCategories,
-    categoryIds,
-    saveConfig,
-  } = useCategoryConfig(session.listId)
-  const mainRef = useRef<HTMLElement>(null)
-  const [showShare, setShowShare] = useState(false)
-  const [showPaste, setShowPaste] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [showDone, setShowDone] = useState(false)
+  const [showDoneGrocery, setShowDoneGrocery] = useState(false)
+  const [showDoneHome, setShowDoneHome] = useState(false)
   const [editName, setEditName] = useState(session.listName)
   const [editDisplayName, setEditDisplayName] = useState(session.displayName)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
   const updateAvailableRef = useRef(updateAvailable)
-  const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
-  const [activeItem, setActiveItem] = useState<GroceryItem | null>(null)
-  const [reorderMode, setReorderMode] = useState(false)
-  const [shopMode, setShopModeState] = useState(() => getShopMode(session.listId))
-  const [showCelebration, setShowCelebration] = useState(false)
-  const prevUncheckedRef = useRef<number | null>(null)
-  const hasLoadedRef = useRef(false)
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 150, tolerance: 5 },
-    }),
-  )
 
   useBodyScrollLock(showSettings)
 
   useEffect(() => {
     updateAvailableRef.current = updateAvailable
   }, [updateAvailable])
+
+  const handleRemoteInsert = useCallback(
+    (section: ListSection) => (item: GroceryItem) => {
+      setPartnerToast({
+        name: item.added_by ?? 'Someone',
+        text: item.text,
+        section,
+      })
+    },
+    [],
+  )
+
+  const saveScrollPosition = useCallback((section: ListSection) => {
+    const ref = section === 'home' ? homeMainRef : groceryMainRef
+    if (ref.current) {
+      scrollPositions.current[section] = ref.current.scrollTop
+    }
+  }, [])
+
+  const handleTabChange = useCallback(
+    (tab: ListSection) => {
+      saveScrollPosition(activeTab)
+      setActiveTab(tab)
+      requestAnimationFrame(() => {
+        const ref = tab === 'home' ? homeMainRef : groceryMainRef
+        if (ref.current) {
+          ref.current.scrollTop = scrollPositions.current[tab]
+        }
+      })
+    },
+    [activeTab, saveScrollPosition, setActiveTab],
+  )
+
+  const openSettings = () => {
+    setEditName(session.listName)
+    setEditDisplayName(session.displayName)
+    setUpdateMessage(null)
+    setShowSettings(true)
+  }
 
   const handleCheckForUpdate = () => {
     setUpdateMessage(null)
@@ -124,69 +110,6 @@ export function ListView({
         setUpdateMessage("You're on the latest version")
       }
     }, 1500)
-  }
-
-  const openSettings = () => {
-    setEditName(session.listName)
-    setEditDisplayName(session.displayName)
-    setUpdateMessage(null)
-    setShowSettings(true)
-  }
-
-  const { pullDistance, isRefreshing, handlers } = usePullToRefresh(mainRef, {
-    onRefresh: refetch,
-    enabled: !loading,
-  })
-
-  const grouped = useMemo(() => {
-    const map = new Map<CategoryId, GroceryItem[]>()
-    for (const cat of resolved) {
-      map.set(cat.id, sortItemsInCategory(items, cat.id))
-    }
-    for (const item of items) {
-      const id = isCategoryId(item.category) ? item.category : 'other'
-      if (!map.has(id)) {
-        map.set(id, sortItemsInCategory(items, id))
-      }
-    }
-    return map
-  }, [items, resolved])
-
-  const uncheckedCount = items.filter((i) => !i.checked).length
-  const checkedCount = items.filter((i) => i.checked).length
-
-  const shopItems = useMemo(
-    () => sortShopItems(items, categoryIds),
-    [items, categoryIds],
-  )
-
-  useEffect(() => {
-    if (loading) return
-
-    if (!hasLoadedRef.current) {
-      hasLoadedRef.current = true
-      prevUncheckedRef.current = uncheckedCount
-      return
-    }
-
-    const prev = prevUncheckedRef.current
-    if (prev !== null && prev >= 1 && uncheckedCount === 0) {
-      setShowCelebration(true)
-    }
-    prevUncheckedRef.current = uncheckedCount
-  }, [uncheckedCount, loading])
-
-  const visibleSections = visibleCategories.filter((cat) => {
-    const catItems = grouped.get(cat.id) ?? []
-    if (catItems.length === 0) return false
-    if (!showDone && catItems.every((i) => i.checked)) return false
-    return true
-  })
-
-  const dragSections = visibleCategories
-
-  const handleSaveAisleSections = async (next: ResolvedCategory[]) => {
-    await saveConfig(buildCategoryConfigFromResolved(next))
   }
 
   const handleSaveSettings = async () => {
@@ -204,103 +127,20 @@ export function ListView({
     setShowSettings(false)
   }
 
-  const handleSaveItem = async (id: string, text: string, category: CategoryId) => {
-    await updateItem(id, { text, category })
-  }
-
-  const handleDragCancel = useCallback(() => {
-    setDragging(false)
-    setActiveItem(null)
-  }, [setDragging])
-
-  const exitReorderMode = useCallback(() => {
-    if (activeItem) {
-      handleDragCancel()
-    }
-    setReorderMode(false)
-  }, [activeItem, handleDragCancel])
-
-  const toggleShopMode = useCallback(() => {
-    setShopModeState((current) => {
-      const next = !current
-      setShopMode(session.listId, next)
-      if (next) {
-        setReorderMode(false)
-        setDragging(false)
-        setActiveItem(null)
-      }
-      return next
-    })
-  }, [session.listId, setDragging])
-
-  const handleDragStart = useCallback(
-    (event: DragStartEvent) => {
-      if (!reorderMode) return
-      setDragging(true)
-      const item = items.find((entry) => entry.id === event.active.id) ?? null
-      setActiveItem(item)
-    },
-    [items, reorderMode, setDragging],
-  )
-
-  const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
-      setDragging(false)
-      setActiveItem(null)
-
-      if (!reorderMode) return
-
-      const { active, over } = event
-      if (!over) return
-
-      const patch = computeReorderPatch(
-        String(active.id),
-        String(over.id),
-        items,
-        categoryIds,
-      )
-
-      if (patch) {
-        try {
-          await reorderItems(patch)
-        } catch (err) {
-          console.error('Failed to reorder items:', err)
-        }
-      }
-    },
-    [items, categoryIds, reorderItems, reorderMode],
-  )
-
-  const renderCategory = (
-    cat: ResolvedCategory,
-    forceVisible = false,
-  ) => {
-    const catItems = grouped.get(cat.id) ?? []
-    const filtered = showDone ? catItems : catItems.filter((i) => !i.checked)
-
-    if (filtered.length === 0 && !forceVisible) return null
-
-    return (
-      <CategorySection
-        key={cat.id}
-        categoryId={cat.id}
-        categoryLabel={cat.label}
-        items={filtered}
-        currentUserName={session.displayName}
-        onToggle={toggleItem}
-        onDelete={deleteItem}
-        onEdit={setEditingItem}
-        isDragActive={Boolean(activeItem)}
-        forceVisible={forceVisible}
-        reorderMode={reorderMode}
-      />
-    )
+  const handleSaveAisleSections = async (next: ResolvedCategory[]) => {
+    await saveConfig(buildCategoryConfigFromResolved(next))
   }
 
   const subtitle =
-    uncheckedCount === 0
-      ? 'All done!'
-      : `${uncheckedCount} left`
+    activeTab === 'home'
+      ? counts.home === 0
+        ? 'All caught up'
+        : `${counts.home} to do`
+      : counts.grocery === 0
+        ? 'All done!'
+        : `${counts.grocery} left`
+
+  const tabLabel = activeTab === 'home' ? 'Home' : 'Shop'
 
   return (
     <div className="flex min-h-dvh flex-col bg-cream dark:bg-surface">
@@ -315,135 +155,64 @@ export function ListView({
               {session.listName}
             </button>
             <p className="truncate text-meta text-warm-gray dark:text-warm-gray-light">
+              {tabLabel}
+              {' · '}
               {subtitle}
               {' · '}
               {session.displayName}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={openSettings}
+            aria-label="Settings"
+            className="press-scale flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cream-dark text-warm-gray active:bg-cream-dark/80 dark:bg-surface-raised dark:text-warm-gray-light"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1.1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
         </div>
-
-        {shopMode && (
-          <div className="flex items-center border-t border-sage/20 bg-sage/10 px-4 py-1.5 dark:border-sage/30 dark:bg-sage/5">
-            <p className="text-meta font-medium text-sage dark:text-sage-light">
-              Shop mode
-            </p>
-          </div>
-        )}
-
-        {reorderMode && (
-          <div className="flex items-center justify-between gap-3 border-t border-sage/20 bg-sage/10 px-4 py-2 dark:border-sage/30 dark:bg-sage/5">
-            <p className="text-meta text-ink dark:text-ink-dark">
-              Drag items to reorder
-            </p>
-            <button
-              type="button"
-              onClick={exitReorderMode}
-              className="shrink-0 rounded-full bg-sage px-3 py-1 text-meta font-semibold text-white active:bg-sage-dark"
-            >
-              Done
-            </button>
-          </div>
-        )}
-
-        {checkedCount > 0 && (
-          <div className="flex items-center gap-3 px-4 pb-2">
-            <button
-              type="button"
-              onClick={() => setShowDone(!showDone)}
-              className="text-meta font-medium text-sage active:text-sage-dark"
-            >
-              {showDone ? 'Hide done' : `Show done (${checkedCount})`}
-            </button>
-            {showDone && (
-              <button
-                type="button"
-                onClick={clearChecked}
-                className="text-meta text-warm-gray-light active:text-red-500"
-              >
-                Clear done
-              </button>
-            )}
-          </div>
-        )}
       </header>
 
-      <main
-        ref={mainRef}
-        className="relative flex-1 overflow-y-auto px-3 pt-1.5 pb-3"
-        {...handlers}
-      >
-        <div
-          className="pointer-events-none flex items-center justify-center overflow-hidden text-meta text-sage transition-[height] dark:text-sage-light"
-          style={{ height: pullDistance > 0 || isRefreshing ? Math.max(pullDistance, isRefreshing ? 40 : 0) : 0 }}
-          aria-hidden="true"
-        >
-          {isRefreshing ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-sage/30 border-t-sage" />
-          ) : pullDistance >= 72 ? (
-            'Release to refresh'
-          ) : pullDistance > 0 ? (
-            'Pull to refresh'
-          ) : null}
-        </div>
-
-        {error && (
-          <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">
-            Could not load items: {error}
-          </p>
-        )}
-        {loading ? (
-          <SkeletonList />
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-5xl">🥑</span>
-            <p className="mt-3 text-title font-medium text-ink dark:text-ink-dark">
-              Nothing on the list yet
-            </p>
-            <p className="mt-1 text-meta text-warm-gray dark:text-warm-gray-light">
-              Add something below, or paste a recipe from ⋯
-            </p>
-          </div>
-        ) : shopMode ? (
-          <ShopFlatList
-            items={shopItems}
-            currentUserName={session.displayName}
-            onToggle={toggleItem}
-            onDelete={deleteItem}
-            onEdit={setEditingItem}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {activeTab === 'grocery' ? (
+          <GroceryTab
+            session={session}
+            showDone={showDoneGrocery}
+            onShowDoneChange={setShowDoneGrocery}
+            onRemoteInsert={handleRemoteInsert('grocery')}
+            mainRef={groceryMainRef}
+            onScroll={() => saveScrollPosition('grocery')}
           />
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
-          >
-            {(activeItem ? dragSections : visibleSections).map((cat) =>
-              renderCategory(cat, Boolean(activeItem)),
-            )}
-            <DragOverlay>
-              {activeItem ? (
-                <DragOverlayItem
-                  item={activeItem}
-                  currentUserName={session.displayName}
-                />
-              ) : null}
-            </DragOverlay>
-          </DndContext>
+          <HomeTab
+            session={session}
+            showDone={showDoneHome}
+            onShowDoneChange={setShowDoneHome}
+            onRemoteInsert={handleRemoteInsert('home')}
+            mainRef={homeMainRef}
+            onScroll={() => saveScrollPosition('home')}
+          />
         )}
-      </main>
+      </div>
 
-      <AddItemBar
-        listId={session.listId}
-        categories={visibleCategories}
-        onAdd={addItem}
-        onPaste={() => setShowPaste(true)}
-        onShare={() => setShowShare(true)}
-        onStartReorder={() => setReorderMode(true)}
-        onToggleShopMode={toggleShopMode}
-        reorderMode={reorderMode}
-        shopMode={shopMode}
+      <TabBar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        groceryCount={counts.grocery}
+        homeCount={counts.home}
       />
 
       <AnimatePresence>
@@ -455,32 +224,7 @@ export function ListView({
             onDismiss={() => setPartnerToast(null)}
           />
         )}
-        {showCelebration && (
-          <DoneCelebration onComplete={() => setShowCelebration(false)} />
-        )}
       </AnimatePresence>
-
-      {showShare && (
-        <ShareSheet code={session.listCode} onClose={() => setShowShare(false)} />
-      )}
-
-      {showPaste && (
-        <PasteSheet
-          listId={session.listId}
-          onAddItems={addItems}
-          onClose={() => setShowPaste(false)}
-        />
-      )}
-
-      {editingItem && (
-        <ItemEditSheet
-          item={editingItem}
-          listId={session.listId}
-          categories={visibleCategories}
-          onSave={handleSaveItem}
-          onClose={() => setEditingItem(null)}
-        />
-      )}
 
       {showSettings && (
         <div
@@ -521,7 +265,7 @@ export function ListView({
             </label>
 
             <AisleSectionsSettings
-              categories={resolved}
+              categories={groceryResolved}
               onSave={handleSaveAisleSections}
             />
 

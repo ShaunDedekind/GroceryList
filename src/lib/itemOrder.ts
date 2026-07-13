@@ -1,8 +1,8 @@
-import type { CategoryId, GroceryItem } from '../types'
+import type { CategoryId, GroceryItem, ItemCategoryId } from '../types'
 
 export interface ItemOrderUpdate {
   id: string
-  category: CategoryId
+  category: ItemCategoryId
   sort_order: number
 }
 
@@ -18,7 +18,7 @@ export function sortItems(items: GroceryItem[]): GroceryItem[] {
 
 export function sortItemsInCategory(
   items: GroceryItem[],
-  categoryId: CategoryId,
+  categoryId: string,
 ): GroceryItem[] {
   return sortItems(items.filter((item) => item.category === categoryId))
 }
@@ -39,7 +39,7 @@ export function sortShopItems(
   })
 }
 
-export function nextSortOrder(items: GroceryItem[], categoryId: CategoryId): number {
+export function nextSortOrder(items: GroceryItem[], categoryId: string): number {
   const inCategory = items.filter((item) => item.category === categoryId)
   if (inCategory.length === 0) return 0
   return Math.max(...inCategory.map((item) => item.sort_order)) + 1

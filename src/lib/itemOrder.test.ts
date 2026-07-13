@@ -22,6 +22,7 @@ function item(
   return {
     id,
     list_id: 'list-1',
+    section: 'grocery',
     category,
     text,
     checked,

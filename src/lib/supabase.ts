@@ -2,8 +2,9 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { getSession } from './storage'
 import type { CategoryId } from '../types'
 import type { ParsedItem } from './parseItems'
-import type { CategoryConfig } from '../types'
+import type { CategoryConfig, HomeCategoryConfig } from '../types'
 import { parseCategoryConfig } from './categoryConfig'
+import { parseHomeCategoryConfig } from './homeCategoryConfig'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -110,6 +111,51 @@ export async function updateCategoryConfig(
     .eq('id', listId)
 
   if (error) throw error
+}
+
+export async function fetchHomeCategoryConfig(
+  listId: string,
+): Promise<HomeCategoryConfig> {
+  const { data, error } = await supabase
+    .from('lists')
+    .select('home_category_config')
+    .eq('id', listId)
+    .single()
+
+  if (error) throw error
+  return parseHomeCategoryConfig(data?.home_category_config)
+}
+
+export async function updateHomeCategoryConfig(
+  listId: string,
+  config: HomeCategoryConfig,
+): Promise<void> {
+  const { error } = await supabase
+    .from('lists')
+    .update({ home_category_config: config })
+    .eq('id', listId)
+
+  if (error) throw error
+}
+
+export async function fetchUncheckedCounts(
+  listId: string,
+): Promise<{ grocery: number; home: number }> {
+  const { data, error } = await supabase
+    .from('items')
+    .select('section')
+    .eq('list_id', listId)
+    .eq('checked', false)
+
+  if (error) throw error
+
+  let grocery = 0
+  let home = 0
+  for (const row of data ?? []) {
+    if (row.section === 'home') home++
+    else grocery++
+  }
+  return { grocery, home }
 }
 
 export async function parseItemsWithAI(text: string): Promise<ParsedItem[]> {

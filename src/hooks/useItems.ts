@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { CategoryId, GroceryItem, Session } from '../types'
+import type {
+  CategoryId,
+  GroceryItem,
+  HomeCategoryId,
+  ItemCategoryId,
+  ListSection,
+  Session,
+} from '../types'
 import {
   applyOrderUpdates,
   nextSortOrder,
@@ -8,22 +15,35 @@ import {
 } from '../lib/itemOrder'
 import { supabase } from '../lib/supabase'
 import { getSession } from '../lib/storage'
-import { saveRecentItem } from '../lib/recentItems'
+import { saveRecentHomeItem, saveRecentItem } from '../lib/recentItems'
 import { saveOverride } from '../lib/categoryOverrides'
+import { saveHomeOverride } from '../lib/homeCategoryOverrides'
+import { normalizeItemSection, shouldDeleteOnClearChecked } from '../lib/sectionItems'
 
-async function loadItems(listId: string) {
+async function loadItems(listId: string, section: ListSection) {
   return supabase
     .from('items')
     .select('*')
     .eq('list_id', listId)
+    .eq('section', section)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
 }
 
-export function useItems(
-  session: Session,
-  options?: { onRemoteInsert?: (item: GroceryItem) => void },
-) {
+function normalizeItem(raw: GroceryItem): GroceryItem {
+  return {
+    ...raw,
+    section: normalizeItemSection(raw.section),
+  }
+}
+
+export interface UseItemsOptions {
+  section: ListSection
+  onRemoteInsert?: (item: GroceryItem) => void
+}
+
+export function useItems(session: Session, options: UseItemsOptions) {
+  const { section, onRemoteInsert } = options
   const [items, setItems] = useState<GroceryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +59,7 @@ export function useItems(
 
       if (isDraggingRef.current) return
 
-      setItems(sortItems(data ?? []))
+      setItems(sortItems((data ?? []).map(normalizeItem)))
       setError(null)
     },
     [],
@@ -47,26 +67,26 @@ export function useItems(
 
   const pollItems = useCallback(async () => {
     if (isDraggingRef.current) return
-    const { data, error: fetchError } = await loadItems(session.listId)
+    const { data, error: fetchError } = await loadItems(session.listId, section)
     applyFetchResult(
       data as GroceryItem[] | null,
       fetchError ? new Error(fetchError.message) : null,
     )
-  }, [session.listId, applyFetchResult])
+  }, [session.listId, section, applyFetchResult])
 
   const refetch = useCallback(async () => {
-    const { data, error: fetchError } = await loadItems(session.listId)
+    const { data, error: fetchError } = await loadItems(session.listId, section)
     applyFetchResult(
       data as GroceryItem[] | null,
       fetchError ? new Error(fetchError.message) : null,
     )
-  }, [session.listId, applyFetchResult])
+  }, [session.listId, section, applyFetchResult])
 
   useEffect(() => {
     let cancelled = false
 
     async function initialLoad() {
-      const { data, error: fetchError } = await loadItems(session.listId)
+      const { data, error: fetchError } = await loadItems(session.listId, section)
 
       if (cancelled) return
 
@@ -80,7 +100,7 @@ export function useItems(
     initialLoad()
 
     const channel = supabase
-      .channel(`items:${session.listId}`)
+      .channel(`items:${section}:${session.listId}`)
       .on(
         'postgres_changes',
         {
@@ -93,22 +113,25 @@ export function useItems(
           if (isDraggingRef.current) return
 
           if (payload.eventType === 'INSERT') {
-            const newItem = payload.new as GroceryItem
+            const newItem = normalizeItem(payload.new as GroceryItem)
+            if (newItem.section !== section) return
+
             const currentName =
               getSession()?.displayName ?? session.displayName
             if (newItem.added_by !== currentName) {
-              options?.onRemoteInsert?.(newItem)
+              onRemoteInsert?.(newItem)
             }
-            setItems((prev) =>
-              sortItems([...prev, newItem]),
-            )
+            setItems((prev) => sortItems([...prev, newItem]))
           } else if (payload.eventType === 'UPDATE') {
+            const updated = normalizeItem(payload.new as GroceryItem)
+            if (updated.section !== section) {
+              setItems((prev) => prev.filter((item) => item.id !== updated.id))
+              return
+            }
             setItems((prev) =>
               sortItems(
                 prev.map((item) =>
-                  item.id === payload.new.id
-                    ? (payload.new as GroceryItem)
-                    : item,
+                  item.id === updated.id ? updated : item,
                 ),
               ),
             )
@@ -128,14 +151,21 @@ export function useItems(
       supabase.removeChannel(channel)
       clearInterval(pollInterval)
     }
-  }, [session.listId, session.displayName, applyFetchResult, pollItems, options?.onRemoteInsert])
+  }, [
+    session.listId,
+    session.displayName,
+    section,
+    applyFetchResult,
+    pollItems,
+    onRemoteInsert,
+  ])
 
   const setDragging = useCallback((dragging: boolean) => {
     isDraggingRef.current = dragging
   }, [])
 
   const addItem = useCallback(
-    async (text: string, category: CategoryId) => {
+    async (text: string, category: ItemCategoryId) => {
       if (!text.trim()) return
 
       const displayName = getSession()?.displayName ?? session.displayName
@@ -145,6 +175,7 @@ export function useItems(
         .from('items')
         .insert({
           list_id: session.listId,
+          section,
           text: text.trim(),
           category,
           added_by: displayName,
@@ -155,14 +186,18 @@ export function useItems(
 
       if (insertError) throw insertError
 
-      saveRecentItem(session.listId, text.trim(), category)
-      setItems((prev) => sortItems([...prev, data as GroceryItem]))
+      if (section === 'home') {
+        saveRecentHomeItem(session.listId, text.trim(), category as HomeCategoryId)
+      } else {
+        saveRecentItem(session.listId, text.trim(), category as CategoryId)
+      }
+      setItems((prev) => sortItems([...prev, normalizeItem(data as GroceryItem)]))
     },
-    [session.listId, session.displayName, items],
+    [session.listId, session.displayName, items, section],
   )
 
   const addItems = useCallback(
-    async (toAdd: { text: string; category: CategoryId }[]) => {
+    async (toAdd: { text: string; category: ItemCategoryId }[]) => {
       let added = 0
       for (const item of toAdd) {
         if (!item.text.trim()) continue
@@ -203,7 +238,7 @@ export function useItems(
       setItems((prev) =>
         sortItems(
           prev.map((item) =>
-            item.id === id ? (data as GroceryItem) : item,
+            item.id === id ? normalizeItem(data as GroceryItem) : item,
           ),
         ),
       )
@@ -211,9 +246,12 @@ export function useItems(
   }, [])
 
   const updateItem = useCallback(
-    async (id: string, updates: { text?: string; category?: CategoryId }) => {
+    async (
+      id: string,
+      updates: { text?: string; category?: ItemCategoryId },
+    ) => {
       const trimmedText = updates.text?.trim()
-      const patch: { text?: string; category?: CategoryId } = {}
+      const patch: { text?: string; category?: ItemCategoryId } = {}
       if (trimmedText) patch.text = trimmedText
       if (updates.category) patch.category = updates.category
       if (Object.keys(patch).length === 0) return
@@ -243,7 +281,7 @@ export function useItems(
         setItems((prev) =>
           sortItems(
             prev.map((item) =>
-              item.id === id ? (data as GroceryItem) : item,
+              item.id === id ? normalizeItem(data as GroceryItem) : item,
             ),
           ),
         )
@@ -262,8 +300,19 @@ export function useItems(
 
       for (const update of updates) {
         const moved = nextItems.find((item) => item.id === update.id)
-        if (moved && moved.category !== previous.find((item) => item.id === update.id)?.category) {
-          saveOverride(session.listId, moved.text, update.category)
+        if (
+          moved &&
+          moved.category !== previous.find((item) => item.id === update.id)?.category
+        ) {
+          if (section === 'home') {
+            saveHomeOverride(
+              session.listId,
+              moved.text,
+              update.category as HomeCategoryId,
+            )
+          } else {
+            saveOverride(session.listId, moved.text, update.category as CategoryId)
+          }
         }
       }
 
@@ -288,7 +337,7 @@ export function useItems(
         throw err
       }
     },
-    [items, session.listId],
+    [items, session.listId, section],
   )
 
   const deleteItem = useCallback(async (id: string) => {
@@ -307,6 +356,8 @@ export function useItems(
   }, [items])
 
   const clearChecked = useCallback(async () => {
+    if (!shouldDeleteOnClearChecked(section)) return
+
     const previous = items
     setItems((prev) => prev.filter((item) => !item.checked))
 
@@ -314,13 +365,14 @@ export function useItems(
       .from('items')
       .delete()
       .eq('list_id', session.listId)
+      .eq('section', section)
       .eq('checked', true)
 
     if (deleteError) {
       setItems(previous)
       throw deleteError
     }
-  }, [session.listId, items])
+  }, [session.listId, section, items])
 
   return {
     items,
@@ -335,5 +387,6 @@ export function useItems(
     clearChecked,
     refetch,
     setDragging,
+    section,
   }
 }

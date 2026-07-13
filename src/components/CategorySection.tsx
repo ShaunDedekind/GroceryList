@@ -5,14 +5,14 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
-import type { CategoryId, GroceryItem } from '../types'
-import { getCategoryEmoji, getCategoryLabel } from '../constants/categories'
+import type { GroceryItem } from '../types'
 import { ItemRow } from './ItemRow'
 import { spring } from '../lib/motion'
 
 interface CategorySectionProps {
-  categoryId: CategoryId
-  categoryLabel?: string
+  categoryId: string
+  categoryLabel: string
+  categoryEmoji: string
   items: GroceryItem[]
   currentUserName: string
   onToggle: (id: string, checked: boolean) => void
@@ -27,6 +27,7 @@ interface CategorySectionProps {
 export function CategorySection({
   categoryId,
   categoryLabel,
+  categoryEmoji,
   items,
   currentUserName,
   onToggle,
@@ -55,9 +56,9 @@ export function CategorySection({
         onClick={() => setOpen(!open)}
         className="press-scale flex w-full items-center gap-2 rounded-xl px-2 py-2 active:bg-cream-dark/60 dark:active:bg-surface-raised"
       >
-        <span className="shrink-0 text-base">{getCategoryEmoji(categoryId)}</span>
+        <span className="shrink-0 text-base">{categoryEmoji}</span>
         <span className="min-w-0 flex-1 truncate text-left text-meta font-medium text-warm-gray dark:text-warm-gray-light">
-          {categoryLabel ?? getCategoryLabel(categoryId)}
+          {categoryLabel}
         </span>
         <span className="shrink-0 rounded-full bg-cream-dark px-2 py-0.5 text-meta font-medium text-warm-gray dark:bg-surface-raised dark:text-warm-gray-light">
           {unchecked > 0 ? unchecked : items.length}
