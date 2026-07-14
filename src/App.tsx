@@ -4,6 +4,7 @@ import { Welcome } from './components/Welcome'
 import { ListView } from './components/ListView'
 import { UpdateBanner } from './components/UpdateBanner'
 import { ViewportProvider } from './components/ViewportProvider'
+import { BrandMark } from './components/Icon'
 
 export default function App() {
   const list = useList()
@@ -50,21 +51,19 @@ export default function App() {
 
 function SetupRequired() {
   return (
-    <div className="safe-top safe-bottom flex min-h-vv h-vv flex-col items-center justify-center bg-cream px-5 dark:bg-surface">
-      <div className="max-w-sm text-center">
-        <span className="text-5xl">🛒</span>
-        <h1 className="mt-3 text-2xl font-semibold text-ink dark:text-ink-dark">
-          Almost ready!
-        </h1>
-        <p className="mt-2 text-sm text-warm-gray dark:text-warm-gray-light">
-          Copy <code className="rounded bg-cream-dark px-1.5 py-0.5 text-meta dark:bg-surface-raised">.env.example</code> to{' '}
-          <code className="rounded bg-cream-dark px-1.5 py-0.5 text-meta dark:bg-surface-raised">.env.local</code> and add your Supabase credentials.
-        </p>
-        <p className="mt-3 text-meta text-warm-gray-light">
-          Then run the migration in{' '}
-          <code className="text-meta">supabase/migrations/001_initial_schema.sql</code>
-        </p>
-      </div>
+    <div className="safe-top safe-bottom flex min-h-vv h-vv flex-col justify-center bg-cream px-gutter dark:bg-surface">
+      <BrandMark />
+      <h1 className="mt-6 text-large-title font-semibold text-ink dark:text-ink-dark">
+        Almost ready
+      </h1>
+      <p className="mt-2 max-w-sm text-body text-warm-gray dark:text-warm-gray-light">
+        Copy <code className="rounded bg-cream-dark px-1.5 py-0.5 text-meta dark:bg-surface-raised">.env.example</code> to{' '}
+        <code className="rounded bg-cream-dark px-1.5 py-0.5 text-meta dark:bg-surface-raised">.env.local</code> and add your Supabase credentials.
+      </p>
+      <p className="mt-3 text-footnote text-warm-gray-light">
+        Then run the migration in{' '}
+        <code className="text-meta">supabase/migrations/001_initial_schema.sql</code>
+      </p>
     </div>
   )
 }

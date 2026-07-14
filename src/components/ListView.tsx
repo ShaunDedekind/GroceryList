@@ -3,7 +3,6 @@ import { AnimatePresence } from 'motion/react'
 import type { Session, GroceryItem, ListSection, CategoryId } from '../types'
 import { useActiveTab } from '../hooks/useActiveTab'
 import { useSectionCounts } from '../hooks/useActiveTab'
-import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
 import { updateListName as updateListNameRemote } from '../lib/supabase'
 import { buildCategoryConfigFromResolved } from '../lib/categoryConfig'
@@ -13,6 +12,8 @@ import { HomeTab } from './HomeTab'
 import { TabBar } from './TabBar'
 import { PartnerToast } from './PartnerToast'
 import { AisleSectionsSettings } from './AisleSectionsSettings'
+import { BottomSheet } from './BottomSheet'
+import { Icon } from './Icon'
 
 interface ListViewProps {
   session: Session
@@ -55,8 +56,6 @@ export function ListView({
   const [editDisplayName, setEditDisplayName] = useState(session.displayName)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
   const updateAvailableRef = useRef(updateAvailable)
-
-  useBodyScrollLock(showSettings)
 
   useEffect(() => {
     updateAvailableRef.current = updateAvailable
@@ -145,17 +144,17 @@ export function ListView({
 
   return (
     <div className="flex min-h-vv h-vv flex-col bg-cream dark:bg-surface">
-      <header className="safe-top sticky top-[var(--vv-offset-top,0px)] z-10 border-b border-cream-dark/80 bg-cream/90 backdrop-blur-lg dark:border-border-dark/80 dark:bg-surface/90">
-        <div className="flex items-center gap-2 px-4 pb-2 pt-2">
+      <header className="safe-top sticky top-[var(--vv-offset-top,0px)] z-10 border-b border-separator bg-cream dark:bg-surface">
+        <button
+          type="button"
+          onClick={openSettings}
+          className="press-scale flex min-h-touch w-full items-center gap-2 px-gutter py-2 text-left active:opacity-80"
+        >
           <div className="min-w-0 flex-1">
-            <button
-              type="button"
-              onClick={openSettings}
-              className="truncate text-left text-title font-bold text-ink active:opacity-70 dark:text-ink-dark"
-            >
+            <p className="truncate text-headline font-semibold text-ink dark:text-ink-dark">
               {session.listName}
-            </button>
-            <p className="truncate text-meta text-warm-gray dark:text-warm-gray-light">
+            </p>
+            <p className="truncate text-footnote text-warm-gray dark:text-warm-gray-light">
               {tabLabel}
               {' · '}
               {subtitle}
@@ -163,28 +162,10 @@ export function ListView({
               {session.displayName}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={openSettings}
-            aria-label="Settings"
-            className="press-scale flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cream-dark text-warm-gray active:bg-cream-dark/80 dark:bg-surface-raised dark:text-warm-gray-light"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1.1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </button>
-        </div>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-cream-dark text-warm-gray dark:bg-surface-raised dark:text-warm-gray-light">
+            <Icon name="settings" size="md" />
+          </span>
+        </button>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
@@ -231,82 +212,73 @@ export function ListView({
       </AnimatePresence>
 
       {showSettings && (
-        <div
-          className="viewport-overlay z-50 flex items-end justify-center bg-black/40"
-          onClick={() => setShowSettings(false)}
+      <BottomSheet onClose={() => setShowSettings(false)} maxHeightClass="max-h-vv-92">
+        <h3 className="text-title font-semibold text-ink dark:text-ink-dark">
+          Settings
+        </h3>
+
+        <label className="mt-4 block">
+          <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
+            List name
+          </span>
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:text-ink-dark"
+          />
+        </label>
+
+        <label className="mt-4 block">
+          <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
+            Your name
+          </span>
+          <input
+            type="text"
+            value={editDisplayName}
+            onChange={(e) => setEditDisplayName(e.target.value)}
+            className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:text-ink-dark"
+          />
+        </label>
+
+        <AisleSectionsSettings
+          categories={groceryResolved}
+          onSave={handleSaveAisleSections}
+        />
+
+        <button
+          type="button"
+          onClick={handleSaveSettings}
+          disabled={!editDisplayName.trim()}
+          className="press-scale mt-4 w-full rounded-[var(--radius-lg)] bg-sage py-2.5 text-footnote font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
         >
-          <div
-            className="safe-bottom max-h-vv-92 w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-cream-dark dark:bg-border-dark" />
-            <h3 className="text-title font-semibold text-ink dark:text-ink-dark">
-              Settings
-            </h3>
+          Save
+        </button>
 
-            <label className="mt-4 block">
-              <span className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
-                List name
-              </span>
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
-              />
-            </label>
+        <button
+          type="button"
+          onClick={handleCheckForUpdate}
+          className="mt-2 w-full rounded-[var(--radius-lg)] py-2.5 text-footnote font-medium text-sage active:bg-sage/10 dark:active:bg-sage/20"
+        >
+          Check for updates
+        </button>
+        {updateMessage && (
+          <p className="mt-1.5 text-center text-footnote text-warm-gray dark:text-warm-gray-light">
+            {updateMessage}
+          </p>
+        )}
 
-            <label className="mt-4 block">
-              <span className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
-                Your name
-              </span>
-              <input
-                type="text"
-                value={editDisplayName}
-                onChange={(e) => setEditDisplayName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
-              />
-            </label>
-
-            <AisleSectionsSettings
-              categories={groceryResolved}
-              onSave={handleSaveAisleSections}
-            />
-
-            <button
-              type="button"
-              onClick={handleSaveSettings}
-              disabled={!editDisplayName.trim()}
-              className="press-scale mt-4 w-full rounded-2xl bg-sage py-2.5 text-sm font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
-            >
-              Save
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCheckForUpdate}
-              className="mt-2 w-full rounded-2xl py-2.5 text-sm font-medium text-sage active:bg-sage/10 dark:active:bg-sage/20"
-            >
-              Check for updates
-            </button>
-            {updateMessage && (
-              <p className="mt-1.5 text-center text-meta text-warm-gray dark:text-warm-gray-light">
-                {updateMessage}
-              </p>
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowSettings(false)
-                onLeave()
-              }}
-              className="mt-2 w-full rounded-2xl py-2.5 text-sm font-medium text-red-500 active:bg-red-50 dark:active:bg-red-950/20"
-            >
-              Leave List
-            </button>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setShowSettings(false)
+            onLeave()
+          }}
+          className="mt-2 w-full rounded-[var(--radius-lg)] py-2.5 text-footnote font-medium text-error active:bg-error-banner"
+        >
+          Leave List
+        </button>
+      </BottomSheet>
       )}
     </div>
   )

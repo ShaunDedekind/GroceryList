@@ -11,6 +11,7 @@ import {
 } from 'motion/react'
 import type { GroceryItem } from '../types'
 import { UserBadge } from './UserBadge'
+import { Icon } from './Icon'
 import { hapticLight, hapticMedium } from '../lib/haptics'
 import { spring, springSnappy } from '../lib/motion'
 
@@ -23,6 +24,7 @@ interface ItemRowProps {
   reorderMode?: boolean
   shopMode?: boolean
   isDragOverlay?: boolean
+  showSeparator?: boolean
 }
 
 const DELETE_THRESHOLD = -72
@@ -33,17 +35,10 @@ function DragHandle(props: HTMLAttributes<HTMLButtonElement>) {
     <button
       type="button"
       {...props}
-      className={`flex h-8 w-6 shrink-0 touch-none items-center justify-center rounded-md text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface-raised ${props.className ?? ''}`}
+      className={`flex h-11 w-8 shrink-0 touch-none items-center justify-center rounded-[var(--radius-sm)] text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface ${props.className ?? ''}`}
       aria-label="Reorder item"
     >
-      <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
-        <circle cx="2.5" cy="2.5" r="1.2" />
-        <circle cx="7.5" cy="2.5" r="1.2" />
-        <circle cx="2.5" cy="7" r="1.2" />
-        <circle cx="7.5" cy="7" r="1.2" />
-        <circle cx="2.5" cy="11.5" r="1.2" />
-        <circle cx="7.5" cy="11.5" r="1.2" />
-      </svg>
+      <Icon name="reorder" size="sm" />
     </button>
   )
 }
@@ -57,6 +52,7 @@ export function ItemRow({
   reorderMode = false,
   shopMode = false,
   isDragOverlay = false,
+  showSeparator = true,
 }: ItemRowProps) {
   const reducedMotion = useReducedMotion()
   const x = useMotionValue(0)
@@ -108,6 +104,8 @@ export function ItemRow({
     }
   }
 
+  const checkboxSize = shopMode ? 'h-11 w-11' : 'h-9 w-9'
+
   return (
     <motion.div
       ref={setNodeRef}
@@ -121,115 +119,105 @@ export function ItemRow({
           : { opacity: 0, x: -48, transition: { duration: 0.2 } }
       }
       transition={spring}
-      className="group relative rounded-xl"
+      className={`group relative ${showSeparator ? 'border-b border-separator' : ''}`}
     >
-      <div className="relative overflow-hidden rounded-xl">
-      <motion.div
-        style={{ opacity: deleteOpacity }}
-        className="absolute inset-y-0 right-0 flex w-20 items-center justify-center bg-red-500 text-sm font-semibold text-white"
-        aria-hidden="true"
-      >
-        Delete
-      </motion.div>
-
-      <motion.div
-        drag={isTouch && !isDragging ? 'x' : false}
-        dragConstraints={{ left: -80, right: 0 }}
-        dragElastic={0.08}
-        style={{ x: isTouch ? x : 0 }}
-        onDragEnd={(_, info) => {
-          if (info.offset.x < DELETE_THRESHOLD) {
-            handleDelete()
-          } else {
-            animate(x, 0, springSnappy)
-          }
-        }}
-        onPointerDown={startLongPress}
-        onPointerUp={cancelLongPress}
-        onPointerLeave={cancelLongPress}
-        className={`relative flex items-center bg-cream pr-0.5 dark:bg-surface ${
-          shopMode ? 'gap-2.5 py-2.5' : reorderMode ? 'gap-1.5 py-2' : 'gap-2 py-2'
-        }`}
-      >
-        {reorderMode && !isDragOverlay && (
-          <DragHandle {...attributes} {...listeners} />
-        )}
-
-        <motion.button
-          type="button"
-          onClick={handleToggle}
-          whileTap={reducedMotion ? undefined : { scale: 0.85 }}
-          transition={springSnappy}
-          className={`flex shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-            shopMode ? 'h-9 w-9' : 'h-7 w-7'
-          } ${
-            item.checked
-              ? 'border-sage bg-sage text-white'
-              : 'border-warm-gray-light/50 active:border-sage'
-          }`}
-          aria-label={item.checked ? 'Uncheck item' : 'Check item'}
+      <div className="relative overflow-hidden">
+        <motion.div
+          style={{ opacity: deleteOpacity }}
+          className="absolute inset-y-0 right-0 flex w-20 items-center justify-center bg-error text-sm font-semibold text-white"
+          aria-hidden="true"
         >
-          <AnimatePresence mode="wait">
-            {item.checked && (
-              <motion.svg
-                key="check"
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                initial={reducedMotion ? false : { scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={springSnappy}
-              >
-                <path d="M2.5 7l3 3 6-6" />
-              </motion.svg>
-            )}
-          </AnimatePresence>
-        </motion.button>
+          Delete
+        </motion.div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onEdit(item)
+        <motion.div
+          drag={isTouch && !isDragging ? 'x' : false}
+          dragConstraints={{ left: -80, right: 0 }}
+          dragElastic={0.08}
+          style={{ x: isTouch ? x : 0 }}
+          onDragEnd={(_, info) => {
+            if (info.offset.x < DELETE_THRESHOLD) {
+              handleDelete()
+            } else {
+              animate(x, 0, springSnappy)
+            }
           }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className={`min-w-0 flex-1 text-left text-body leading-snug transition-opacity active:opacity-70 ${
-            shopMode ? 'line-clamp-2' : 'truncate'
-          } ${
-            item.checked
-              ? 'text-warm-gray-light line-through dark:text-warm-gray'
-              : 'text-ink dark:text-ink-dark'
+          onPointerDown={startLongPress}
+          onPointerUp={cancelLongPress}
+          onPointerLeave={cancelLongPress}
+          className={`relative flex min-h-touch items-center bg-grouped pr-1 dark:bg-surface-raised ${
+            shopMode ? 'gap-2.5 py-2' : reorderMode ? 'gap-1.5 py-1.5' : 'gap-2 py-1.5'
           }`}
         >
-          {item.text}
-        </button>
+          {reorderMode && !isDragOverlay && (
+            <DragHandle {...attributes} {...listeners} />
+          )}
 
-        <UserBadge
-          name={item.added_by}
-          isCurrentUser={item.added_by === currentUserName}
-        />
+          <motion.button
+            type="button"
+            onClick={handleToggle}
+            whileTap={reducedMotion ? undefined : { scale: 0.85 }}
+            transition={springSnappy}
+            className={`flex shrink-0 items-center justify-center rounded-full border-2 transition-colors ${checkboxSize} ${
+              item.checked
+                ? 'border-sage bg-sage text-white'
+                : 'border-warm-gray-light/50 active:border-sage'
+            }`}
+            aria-label={item.checked ? 'Uncheck item' : 'Check item'}
+          >
+            <AnimatePresence mode="wait">
+              {item.checked && (
+                <motion.span
+                  key="check"
+                  initial={reducedMotion ? false : { scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={springSnappy}
+                >
+                  <Icon name="check" size="sm" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
 
-        {!isTouch && (
           <button
             type="button"
-            onClick={handleDelete}
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-warm-gray-light transition-opacity active:bg-red-50 active:text-red-500 dark:active:bg-red-950/30 ${
-              showDeleteHint
-                ? 'opacity-100 text-red-500'
-                : 'opacity-0 group-hover:opacity-70 hover:!opacity-100'
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit(item)
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`min-w-0 flex-1 text-left text-headline leading-snug transition-opacity active:opacity-70 ${
+              shopMode ? 'line-clamp-2' : 'truncate'
+            } ${
+              item.checked
+                ? 'text-warm-gray-light line-through dark:text-warm-gray'
+                : 'text-ink dark:text-ink-dark'
             }`}
-            aria-label="Delete item"
           >
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M4.5 4.5l9 9M13.5 4.5l-9 9" />
-            </svg>
+            {item.text}
           </button>
-        )}
-      </motion.div>
+
+          <UserBadge
+            name={item.added_by}
+            isCurrentUser={item.added_by === currentUserName}
+          />
+
+          {!isTouch && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-warm-gray-light transition-opacity active:bg-error-banner ${
+                showDeleteHint
+                  ? 'opacity-100 text-error'
+                  : 'opacity-0 group-hover:opacity-70 hover:!opacity-100'
+              }`}
+              aria-label="Delete item"
+            >
+              <Icon name="close" size="sm" />
+            </button>
+          )}
+        </motion.div>
       </div>
 
       {showDeleteHint && !isTouch && (
@@ -240,7 +228,7 @@ export function ItemRow({
               setShowDeleteHint(false)
               handleDelete()
             }}
-            className="press-scale rounded-lg bg-red-500 px-3 py-1 text-xs font-medium text-white shadow-md"
+            className="press-scale rounded-[var(--radius-md)] bg-error px-3 py-1 text-meta font-medium text-white shadow-md"
           >
             Delete item
           </button>

@@ -17,8 +17,8 @@ export function ShopFlatList({
   onEdit,
 }: ShopFlatListProps) {
   return (
-    <div className="px-1">
-      {items.map((item) => (
+    <div className="overflow-hidden rounded-[var(--radius-lg)] bg-grouped dark:bg-surface-raised">
+      {items.map((item, index) => (
         <ItemRow
           key={item.id}
           item={item}
@@ -27,6 +27,7 @@ export function ShopFlatList({
           onDelete={onDelete}
           onEdit={onEdit}
           shopMode
+          showSeparator={index < items.length - 1}
         />
       ))}
     </div>

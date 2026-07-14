@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { parseJoinCodeFromUrl, clearJoinParamFromUrl } from '../lib/joinUrl'
+import { BrandMark, Icon } from './Icon'
 
 interface WelcomeProps {
   loading: boolean
@@ -37,31 +38,31 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
 
   if (mode === 'home') {
     return (
-      <div className="safe-top flex min-h-vv h-vv flex-col bg-cream dark:bg-surface">
-        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10">
-          <span className="text-5xl">🛒</span>
-          <h1 className="mt-5 text-2xl font-bold tracking-tight text-ink dark:text-ink-dark">
-            Grocery List
+      <div className="safe-top flex min-h-vv h-vv flex-col bg-cream px-gutter dark:bg-surface">
+        <div className="flex flex-1 flex-col justify-end pb-8">
+          <BrandMark />
+          <h1 className="mt-6 text-large-title font-semibold text-ink dark:text-ink-dark">
+            Groceries
           </h1>
-          <p className="mt-2 max-w-xs text-center text-sm text-warm-gray dark:text-warm-gray-light">
-            A shared list for you and your partner. No login — just share a code.
+          <p className="mt-2 max-w-sm text-body text-warm-gray dark:text-warm-gray-light">
+            Share a list with your partner. No account needed.
           </p>
         </div>
 
-        <div className="safe-bottom space-y-2.5 px-5 pb-6">
+        <div className="safe-bottom space-y-3 pb-6">
           <button
             type="button"
             onClick={() => switchMode('create')}
-            className="press-scale w-full rounded-2xl bg-sage py-3 text-sm font-semibold text-white active:bg-sage-dark"
+            className="press-scale w-full rounded-[var(--radius-lg)] bg-sage py-3 text-footnote font-semibold text-white active:bg-sage-dark"
           >
-            Create a List
+            New list
           </button>
           <button
             type="button"
             onClick={() => switchMode('join')}
-            className="press-scale w-full rounded-2xl border-2 border-sage/30 bg-white py-3 text-sm font-semibold text-sage active:bg-sage/5 dark:border-sage/40 dark:bg-surface-raised dark:text-sage-light"
+            className="press-scale w-full py-3 text-footnote font-semibold text-sage active:opacity-70 dark:text-sage-light"
           >
-            Join with Code
+            Join with code
           </button>
         </div>
       </div>
@@ -72,24 +73,22 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
 
   return (
     <div className="flex min-h-vv h-vv flex-col bg-cream dark:bg-surface">
-      <header className="safe-top flex items-center gap-2 px-4 pt-3">
+      <header className="safe-top flex items-center gap-2 px-gutter pt-3">
         <button
           type="button"
           onClick={() => switchMode('home')}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-warm-gray active:bg-cream-dark dark:active:bg-surface-raised"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-warm-gray active:bg-cream-dark dark:active:bg-surface-raised"
           aria-label="Go back"
         >
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 4l-6 6 6 6" />
-          </svg>
+          <Icon name="back" size="md" />
         </button>
         <h2 className="text-title font-semibold text-ink dark:text-ink-dark">
-          {isCreate ? 'Create a List' : 'Join a List'}
+          {isCreate ? 'New list' : 'Join with code'}
         </h2>
       </header>
 
       <form
-        className="flex flex-1 flex-col px-5 pt-6"
+        className="flex flex-1 flex-col px-gutter pt-6"
         onSubmit={(e) => {
           e.preventDefault()
           if (isCreate) {
@@ -100,7 +99,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
         }}
       >
         <label className="block">
-          <span className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
+          <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
             Your name
           </span>
           <input
@@ -110,13 +109,13 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
             placeholder="Simon"
             required
             autoFocus={isCreate}
-            className="mt-1.5 w-full rounded-xl border border-cream-dark bg-white px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+            className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:text-ink-dark"
           />
         </label>
 
         {isCreate ? (
           <label className="mt-4 block">
-            <span className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
+            <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
               List name
             </span>
             <input
@@ -124,12 +123,12 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
               value={listName}
               onChange={(e) => setListName(e.target.value)}
               placeholder="Our Grocery List"
-              className="mt-1.5 w-full rounded-xl border border-cream-dark bg-white px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+              className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:text-ink-dark"
             />
           </label>
         ) : (
           <label className="mt-4 block">
-            <span className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
+            <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
               List code
             </span>
             <input
@@ -140,13 +139,13 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
               required
               maxLength={8}
               autoFocus={!isCreate && Boolean(code)}
-              className="mt-1.5 w-full rounded-xl border border-cream-dark bg-white px-3 py-2.5 text-center font-mono text-xl tracking-widest outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+              className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-center font-mono text-xl tracking-widest outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:text-ink-dark"
             />
           </label>
         )}
 
         {error && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">
+          <p className="mt-3 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
             {error}
           </p>
         )}
@@ -155,9 +154,9 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
           <button
             type="submit"
             disabled={loading || !displayName.trim() || (!isCreate && !code.trim())}
-            className="press-scale w-full rounded-2xl bg-sage py-3 text-sm font-semibold text-white disabled:opacity-50 active:bg-sage-dark"
+            className="press-scale w-full rounded-[var(--radius-lg)] bg-sage py-3 text-footnote font-semibold text-white disabled:opacity-50 active:bg-sage-dark"
           >
-            {loading ? 'One moment…' : isCreate ? 'Create List' : 'Join List'}
+            {loading ? 'One moment…' : isCreate ? 'Create list' : 'Join list'}
           </button>
         </div>
       </form>

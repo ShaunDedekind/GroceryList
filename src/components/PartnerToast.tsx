@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { springSnappy } from '../lib/motion'
+import { Icon } from './Icon'
 
 const MAX_TEXT_LEN = 28
 
@@ -31,11 +32,13 @@ export function PartnerToast({ name, text, onDismiss }: PartnerToastProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={reducedMotion ? undefined : { opacity: 0, y: 8 }}
       transition={springSnappy}
-      className="fixed bottom-[calc(4.5rem+max(0.75rem,env(safe-area-inset-bottom))+var(--vv-offset-bottom,0px))] left-4 right-4 z-40 mx-auto max-w-lg rounded-2xl border border-cream-dark bg-white px-4 py-3 text-left shadow-lg dark:border-border-dark dark:bg-surface-raised"
+      className="fixed bottom-[calc(4.5rem+max(0.75rem,env(safe-area-inset-bottom))+var(--vv-offset-bottom,0px))] left-4 right-4 z-40 mx-auto flex max-w-lg items-center gap-3 overflow-hidden rounded-[var(--radius-lg)] border border-separator bg-cream px-4 py-3 text-left shadow-lg dark:bg-surface-raised"
       role="status"
       aria-live="polite"
     >
-      <p className="text-body text-ink dark:text-ink-dark">
+      <div className="h-8 w-1 shrink-0 rounded-full bg-sage" aria-hidden="true" />
+      <Icon name="cart" size="sm" className="text-sage dark:text-sage-light" />
+      <p className="min-w-0 flex-1 text-body text-ink dark:text-ink-dark">
         <span className="font-semibold">{name}</span>
         {' added '}
         <span className="text-warm-gray dark:text-warm-gray-light">

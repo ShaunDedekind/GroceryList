@@ -16,28 +16,28 @@ export function UpdateBanner({ visible, onRefresh, onDismiss }: UpdateBannerProp
         <motion.div
           role="alert"
           aria-live="assertive"
-          initial={reducedMotion ? false : { opacity: 0, y: -16 }}
+          initial={reducedMotion ? false : { opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={reducedMotion ? undefined : { opacity: 0, y: -16 }}
+          exit={reducedMotion ? undefined : { opacity: 0, y: -12 }}
           transition={springSnappy}
-          className="viewport-fixed-top safe-top fixed inset-x-0 z-[60] border-b border-sage-dark/30 bg-sage px-4 pb-3 pt-2 shadow-md"
+          className="viewport-fixed-top safe-top fixed inset-x-0 z-[60] px-gutter pb-2 pt-2"
         >
-          <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
-            <p className="min-w-0 flex-1 text-sm font-medium text-white">
-              A new version is ready
+          <div className="mx-auto flex max-w-lg min-h-touch items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-separator bg-cream px-4 py-2.5 shadow-md dark:bg-surface-raised">
+            <p className="min-w-0 flex-1 text-footnote font-medium text-ink dark:text-ink-dark">
+              Update available
             </p>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-3">
               <button
                 type="button"
                 onClick={onDismiss}
-                className="press-scale rounded-lg px-2.5 py-1.5 text-sm font-medium text-white/80 active:text-white"
+                className="press-scale min-h-[36px] px-2 text-footnote font-medium text-warm-gray active:text-ink dark:text-warm-gray-light dark:active:text-ink-dark"
               >
                 Later
               </button>
               <button
                 type="button"
                 onClick={() => void onRefresh()}
-                className="press-scale rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-sage active:bg-cream"
+                className="press-scale min-h-[36px] text-footnote font-semibold text-sage active:text-sage-dark dark:text-sage-light"
               >
                 Refresh
               </button>

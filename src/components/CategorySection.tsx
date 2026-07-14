@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import type { GroceryItem } from '../types'
 import { ItemRow } from './ItemRow'
+import { Icon } from './Icon'
 import { spring } from '../lib/motion'
 
 interface CategorySectionProps {
@@ -50,32 +51,26 @@ export function CategorySection({
   const showDropZone = isDragActive && items.length === 0
 
   return (
-    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-0.5">
+    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-2">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="press-scale flex w-full items-center gap-2 rounded-xl px-2 py-2 active:bg-cream-dark/60 dark:active:bg-surface-raised"
+        className="press-scale flex w-full items-center gap-2 px-1 py-2 active:opacity-70"
       >
         <span className="shrink-0 text-base">{categoryEmoji}</span>
-        <span className="min-w-0 flex-1 truncate text-left text-meta font-medium text-warm-gray dark:text-warm-gray-light">
+        <span className="min-w-0 flex-1 truncate text-left text-footnote font-semibold uppercase tracking-wide text-warm-gray dark:text-warm-gray-light">
           {categoryLabel}
         </span>
-        <span className="shrink-0 rounded-full bg-cream-dark px-2 py-0.5 text-meta font-medium text-warm-gray dark:bg-surface-raised dark:text-warm-gray-light">
+        <span className="shrink-0 rounded-full bg-cream-dark px-1.5 py-0.5 text-meta font-medium text-warm-gray dark:bg-surface dark:text-warm-gray-light">
           {unchecked > 0 ? unchecked : items.length}
         </span>
-        <motion.svg
-          width="14"
-          height="14"
-          viewBox="0 0 16 16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
+        <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={spring}
           className="shrink-0 text-warm-gray-light"
         >
-          <path d="M4 6l4 4 4-4" />
-        </motion.svg>
+          <Icon name="chevronDown" size="sm" />
+        </motion.span>
       </button>
 
       <AnimatePresence initial={false}>
@@ -91,15 +86,15 @@ export function CategorySection({
           >
             <div
               ref={setNodeRef}
-              className={`min-h-0 rounded-xl px-2 pb-0.5 pr-3 transition-colors ${
+              className={`min-h-0 overflow-hidden rounded-[var(--radius-lg)] transition-colors ${
                 isOver
                   ? 'bg-sage/10 ring-1 ring-sage/30 dark:bg-sage/5'
-                  : ''
+                  : 'bg-grouped dark:bg-surface-raised'
               } ${showDropZone ? 'min-h-10' : ''}`}
             >
               <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
                 <AnimatePresence mode="sync">
-                  {items.map((item) => (
+                  {items.map((item, index) => (
                     <ItemRow
                       key={item.id}
                       item={item}
@@ -108,12 +103,13 @@ export function CategorySection({
                       onDelete={onDelete}
                       onEdit={onEdit}
                       reorderMode={reorderMode}
+                      showSeparator={index < items.length - 1}
                     />
                   ))}
                 </AnimatePresence>
               </SortableContext>
               {showDropZone && (
-                <p className="px-2 py-3 text-center text-meta text-warm-gray-light">
+                <p className="px-3 py-3 text-center text-footnote text-warm-gray-light">
                   Drop here
                 </p>
               )}

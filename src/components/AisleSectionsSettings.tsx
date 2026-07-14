@@ -3,6 +3,7 @@ import type { CategoryId } from '../types'
 import {
   type ResolvedCategory,
 } from '../lib/categoryConfig'
+import { Icon } from './Icon'
 
 interface AisleSectionsSettingsProps {
   categories: ResolvedCategory[]
@@ -80,24 +81,26 @@ export function AisleSectionsSettings({
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-meta font-medium text-warm-gray dark:text-warm-gray-light">
+        <p className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
           Aisle sections
         </p>
         <button
           type="button"
           onClick={() => void handleSave()}
           disabled={saving}
-          className="rounded-lg px-2.5 py-1 text-meta font-semibold text-sage active:bg-sage/10 disabled:opacity-40 dark:active:bg-sage/20"
+          className="rounded-[var(--radius-md)] px-2.5 py-1 text-footnote font-semibold text-sage active:bg-sage/10 disabled:opacity-40 dark:active:bg-sage/20"
         >
           {saving ? 'Saving…' : 'Save sections'}
         </button>
       </div>
 
-      <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto">
+      <ul className="mt-2 max-h-56 overflow-hidden rounded-[var(--radius-lg)] bg-grouped dark:bg-surface">
         {categories.map((category, index) => (
           <li
             key={category.id}
-            className="flex items-center gap-2 rounded-xl bg-cream/60 px-2 py-2 dark:bg-surface"
+            className={`flex min-h-touch items-center gap-2 px-3 py-2 ${
+              index < categories.length - 1 ? 'border-b border-separator' : ''
+            }`}
           >
             <div className="flex shrink-0 flex-col">
               <button
@@ -105,18 +108,18 @@ export function AisleSectionsSettings({
                 onClick={() => moveCategory(index, -1)}
                 disabled={index === 0}
                 aria-label={`Move ${category.label} up`}
-                className="rounded px-1 text-warm-gray-light disabled:opacity-30 active:text-sage"
+                className="flex h-5 w-8 items-center justify-center disabled:opacity-30 active:text-sage"
               >
-                ▲
+                <Icon name="chevronDown" size="sm" className="rotate-180" />
               </button>
               <button
                 type="button"
                 onClick={() => moveCategory(index, 1)}
                 disabled={index === categories.length - 1}
                 aria-label={`Move ${category.label} down`}
-                className="rounded px-1 text-warm-gray-light disabled:opacity-30 active:text-sage"
+                className="flex h-5 w-8 items-center justify-center disabled:opacity-30 active:text-sage"
               >
-                ▼
+                <Icon name="chevronDown" size="sm" />
               </button>
             </div>
 
@@ -133,7 +136,7 @@ export function AisleSectionsSettings({
                   if (e.key === 'Escape') setEditingId(null)
                 }}
                 autoFocus
-                className="min-w-0 flex-1 rounded-lg border border-cream-dark bg-white px-2 py-1 text-input outline-none focus:border-sage dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+                className="min-w-0 flex-1 rounded-[var(--radius-sm)] border border-separator bg-cream px-2 py-1 text-input outline-none focus:border-sage dark:bg-surface-raised dark:text-ink-dark"
               />
             ) : (
               <button
@@ -149,10 +152,10 @@ export function AisleSectionsSettings({
               type="button"
               onClick={() => toggleVisibility(category.id)}
               aria-label={category.visible ? `Hide ${category.label}` : `Show ${category.label}`}
-              className={`shrink-0 rounded-lg px-2 py-1 text-meta font-medium ${
+              className={`shrink-0 rounded-[var(--radius-sm)] px-2 py-1 text-footnote font-medium ${
                 category.visible
                   ? 'text-sage active:bg-sage/10 dark:active:bg-sage/20'
-                  : 'text-warm-gray-light active:bg-cream-dark dark:active:bg-surface-raised'
+                  : 'text-warm-gray-light active:bg-cream-dark dark:active:bg-surface'
               }`}
             >
               {category.visible ? 'Shown' : 'Hidden'}
@@ -162,12 +165,12 @@ export function AisleSectionsSettings({
       </ul>
 
       {error && (
-        <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">
+        <p className="mt-2 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
           {error}
         </p>
       )}
 
-      <p className="mt-2 text-meta text-warm-gray-light">
+      <p className="mt-2 text-footnote text-warm-gray-light">
         Tap a name to rename. Hidden sections stay saved but won&apos;t appear in your list.
       </p>
     </div>

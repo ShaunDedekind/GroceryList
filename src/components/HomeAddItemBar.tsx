@@ -13,6 +13,7 @@ import { saveHomeOverride } from '../lib/homeCategoryOverrides'
 import { parseItemText } from '../lib/parseItemText'
 import { getRecentHomeItems, type RecentHomeItem } from '../lib/recentItems'
 import { CategoryPicker } from './CategoryPicker'
+import { Icon } from './Icon'
 
 interface HomeAddItemBarProps {
   listId: string
@@ -135,7 +136,7 @@ export function HomeAddItemBar({
   }, [showCategories])
 
   return (
-    <div className="relative z-30 border-t border-cream-dark bg-white/90 px-4 py-2.5 backdrop-blur-lg dark:border-border-dark dark:bg-surface/90">
+    <div className="relative z-30 border-t border-separator bg-cream px-gutter py-2.5 dark:bg-surface">
       {showCategories && (
         <div onClick={(e) => e.stopPropagation()}>
           <CategoryPicker
@@ -148,7 +149,7 @@ export function HomeAddItemBar({
       )}
 
       {error && (
-        <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">
+        <p className="mb-2 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
           {error}
         </p>
       )}
@@ -160,16 +161,14 @@ export function HomeAddItemBar({
             e.stopPropagation()
             setShowCategories(!showCategories)
           }}
-          className={`press-scale flex h-10 shrink-0 items-center gap-1 rounded-xl px-2.5 text-meta font-medium active:bg-cream-dark/80 dark:bg-surface-raised dark:text-warm-gray-light ${
+          className={`press-scale flex h-11 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-2.5 text-footnote font-medium active:bg-cream-dark/80 dark:bg-surface-raised dark:text-warm-gray-light ${
             isSuggested
               ? 'bg-sage/15 text-sage-dark ring-2 ring-sage/30 dark:text-sage-light'
               : 'bg-cream-dark text-warm-gray'
           }`}
         >
           <span>{selected.emoji}</span>
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 4.5l3 3 3-3" />
-          </svg>
+          <Icon name="chevronDown" size="sm" />
         </button>
 
         <div className="relative min-w-0 flex-1">
@@ -188,11 +187,11 @@ export function HomeAddItemBar({
             }}
             placeholder="Fix, buy, or remember at home…"
             enterKeyHint="done"
-            className="w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+            className="w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:text-ink-dark"
           />
 
           {showHints && recentHints.length > 0 && (
-            <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-xl border border-cream-dark bg-white shadow-lg dark:border-border-dark dark:bg-surface-raised">
+            <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-[var(--radius-md)] border border-separator bg-cream shadow-lg dark:bg-surface-raised">
               {recentHints.map((item) => (
                 <button
                   key={`${item.text}-${item.category}`}
@@ -219,12 +218,10 @@ export function HomeAddItemBar({
               : { scale: [1, 1.15, 1] }
           }
           transition={springSnappy}
-          className="press-scale flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sage text-white disabled:opacity-40 active:bg-sage-dark"
+          className="press-scale flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-sage text-white disabled:opacity-40 active:bg-sage-dark"
           aria-label="Add item"
         >
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M10 4v12M4 10h12" />
-          </svg>
+          <Icon name="add" size="md" />
         </motion.button>
       </div>
     </div>

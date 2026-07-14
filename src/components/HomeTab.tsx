@@ -15,6 +15,7 @@ import { CategorySection } from './CategorySection'
 import { HomeAddItemBar } from './HomeAddItemBar'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
+import { Icon } from './Icon'
 
 interface HomeTabProps {
   session: Session
@@ -126,7 +127,7 @@ export function HomeTab({
 
       <main
         ref={mainRef}
-        className="relative flex-1 overflow-y-auto px-3 pt-1.5 pb-3"
+        className="relative flex-1 overflow-y-auto px-gutter pt-1.5 pb-3"
         onScroll={onScroll}
         {...handlers}
       >
@@ -157,20 +158,24 @@ export function HomeTab({
         </div>
 
         {error && (
-          <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">
-            Could not load items: {error}
+          <p className="mb-2 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
+            Couldn&apos;t load items. Pull down to retry.
           </p>
         )}
         {loading ? (
           <SkeletonList />
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-5xl">🏠</span>
-            <p className="mt-3 text-title font-medium text-ink dark:text-ink-dark">
-              Nothing on the home list yet
+          <div className="relative py-12">
+            <Icon
+              name="checklist"
+              size="lg"
+              className="absolute right-0 top-0 opacity-[0.06] dark:opacity-[0.08]"
+            />
+            <p className="text-large-title font-semibold text-ink dark:text-ink-dark">
+              All clear
             </p>
-            <p className="mt-1 text-meta text-warm-gray dark:text-warm-gray-light">
-              Things to fix, buy, or remember at home
+            <p className="mt-2 text-body text-warm-gray dark:text-warm-gray-light">
+              Add household tasks below
             </p>
           </div>
         ) : (

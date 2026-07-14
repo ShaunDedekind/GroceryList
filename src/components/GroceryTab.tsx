@@ -29,6 +29,7 @@ import { SkeletonList } from './SkeletonList'
 import { DragOverlayItem } from './DragOverlayItem'
 import { ShopFlatList } from './ShopFlatList'
 import { DoneCelebration } from './DoneCelebration'
+import { Icon } from './Icon'
 
 interface GroceryTabProps {
   session: Session
@@ -275,7 +276,7 @@ export function GroceryTab({
 
       <main
         ref={mainRef}
-        className="relative flex-1 overflow-y-auto px-3 pt-1.5 pb-3"
+        className="relative flex-1 overflow-y-auto px-gutter pt-1.5 pb-3"
         onScroll={onScroll}
         {...handlers}
       >
@@ -306,20 +307,24 @@ export function GroceryTab({
         </div>
 
         {error && (
-          <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-meta text-red-600 dark:bg-red-950/30 dark:text-red-400">
-            Could not load items: {error}
+          <p className="mb-2 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
+            Couldn&apos;t load items. Pull down to retry.
           </p>
         )}
         {loading ? (
           <SkeletonList />
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-5xl">🥑</span>
-            <p className="mt-3 text-title font-medium text-ink dark:text-ink-dark">
-              Nothing on the list yet
+          <div className="relative py-12">
+            <Icon
+              name="list"
+              size="lg"
+              className="absolute right-0 top-0 opacity-[0.06] dark:opacity-[0.08]"
+            />
+            <p className="text-large-title font-semibold text-ink dark:text-ink-dark">
+              Your list is empty
             </p>
-            <p className="mt-1 text-meta text-warm-gray dark:text-warm-gray-light">
-              Add something below, or paste a recipe from ⋯
+            <p className="mt-2 text-body text-warm-gray dark:text-warm-gray-light">
+              Type below to add something
             </p>
           </div>
         ) : shopMode ? (
