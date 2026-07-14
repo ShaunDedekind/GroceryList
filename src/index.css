@@ -76,6 +76,42 @@ select {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
+.min-h-vv {
+  min-height: var(--vv-height, 100dvh);
+}
+
+.h-vv {
+  height: var(--vv-height, 100dvh);
+}
+
+.max-h-vv-85 {
+  max-height: calc(var(--vv-height, 100dvh) * 0.85);
+}
+
+.max-h-vv-90 {
+  max-height: calc(var(--vv-height, 100dvh) * 0.9);
+}
+
+.max-h-vv-92 {
+  max-height: calc(var(--vv-height, 100dvh) * 0.92);
+}
+
+.viewport-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--vv-offset-top, 0px);
+  height: var(--vv-height, 100dvh);
+}
+
+.viewport-fixed-top {
+  top: var(--vv-offset-top, 0px);
+}
+
+.viewport-fixed-bottom {
+  bottom: var(--vv-offset-bottom, 0px);
+}
+
 .press-scale {
   transition: transform 0.15s ease;
 }

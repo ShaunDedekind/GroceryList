@@ -60,7 +60,7 @@ export function ShareSheet({ code, onClose }: ShareSheetProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
+    <div className="viewport-overlay z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
       <div
         className="safe-bottom w-full max-w-lg rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
         onClick={(e) => e.stopPropagation()}

@@ -3,6 +3,7 @@ import { usePwaUpdate } from './hooks/usePwaUpdate'
 import { Welcome } from './components/Welcome'
 import { ListView } from './components/ListView'
 import { UpdateBanner } from './components/UpdateBanner'
+import { ViewportProvider } from './components/ViewportProvider'
 
 export default function App() {
   const list = useList()
@@ -36,20 +37,20 @@ export default function App() {
   }
 
   return (
-    <>
+    <ViewportProvider>
       <UpdateBanner
         visible={pwa.needRefresh}
         onRefresh={pwa.refresh}
         onDismiss={pwa.dismiss}
       />
       {content}
-    </>
+    </ViewportProvider>
   )
 }
 
 function SetupRequired() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-cream px-5 dark:bg-surface">
+    <div className="safe-top safe-bottom flex min-h-vv h-vv flex-col items-center justify-center bg-cream px-5 dark:bg-surface">
       <div className="max-w-sm text-center">
         <span className="text-5xl">🛒</span>
         <h1 className="mt-3 text-2xl font-semibold text-ink dark:text-ink-dark">

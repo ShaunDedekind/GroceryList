@@ -77,9 +77,9 @@ export function PasteSheet({ listId, onAddItems, onClose }: PasteSheetProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
+    <div className="viewport-overlay z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
       <div
-        className="safe-bottom flex max-h-[85dvh] w-full max-w-lg flex-col rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
+        className="safe-bottom flex max-h-vv-85 w-full max-w-lg flex-col rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-cream-dark dark:bg-border-dark" />

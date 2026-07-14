@@ -144,8 +144,8 @@ export function ListView({
   const tabLabel = activeTab === 'home' ? 'Home' : 'Shop'
 
   return (
-    <div className="flex min-h-dvh flex-col bg-cream dark:bg-surface">
-      <header className="safe-top sticky top-0 z-10 border-b border-cream-dark/80 bg-cream/90 backdrop-blur-lg dark:border-border-dark/80 dark:bg-surface/90">
+    <div className="flex min-h-vv h-vv flex-col bg-cream dark:bg-surface">
+      <header className="safe-top sticky top-[var(--vv-offset-top,0px)] z-10 border-b border-cream-dark/80 bg-cream/90 backdrop-blur-lg dark:border-border-dark/80 dark:bg-surface/90">
         <div className="flex items-center gap-2 px-4 pb-2 pt-2">
           <div className="min-w-0 flex-1">
             <button
@@ -232,11 +232,11 @@ export function ListView({
 
       {showSettings && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          className="viewport-overlay z-50 flex items-end justify-center bg-black/40"
           onClick={() => setShowSettings(false)}
         >
           <div
-            className="safe-bottom max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
+            className="safe-bottom max-h-vv-92 w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white px-5 pb-6 pt-5 shadow-lg dark:bg-surface-raised"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-cream-dark dark:bg-border-dark" />

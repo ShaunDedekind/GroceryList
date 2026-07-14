@@ -280,12 +280,19 @@ export function GroceryTab({
         {...handlers}
       >
         <div
-          className="pointer-events-none flex items-center justify-center overflow-hidden text-meta text-sage transition-[height] dark:text-sage-light"
+          className="pointer-events-none flex h-10 origin-top items-center justify-center overflow-hidden text-meta text-sage transition-[transform,opacity] duration-150 dark:text-sage-light"
           style={{
-            height:
+            transform: `scaleY(${
               pullDistance > 0 || isRefreshing
-                ? Math.max(pullDistance, isRefreshing ? 40 : 0)
-                : 0,
+                ? Math.min(
+                    Math.max(pullDistance, isRefreshing ? 40 : 0) / 40,
+                    1.5,
+                  )
+                : 0
+            })`,
+            opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
+            willChange:
+              pullDistance > 0 || isRefreshing ? 'transform' : undefined,
           }}
           aria-hidden="true"
         >

@@ -20,7 +20,7 @@ export function UpdateBanner({ visible, onRefresh, onDismiss }: UpdateBannerProp
           animate={{ opacity: 1, y: 0 }}
           exit={reducedMotion ? undefined : { opacity: 0, y: -16 }}
           transition={springSnappy}
-          className="safe-top fixed inset-x-0 top-0 z-[60] border-b border-sage-dark/30 bg-sage px-4 pb-3 pt-2 shadow-md"
+          className="viewport-fixed-top safe-top fixed inset-x-0 z-[60] border-b border-sage-dark/30 bg-sage px-4 pb-3 pt-2 shadow-md"
         >
           <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
             <p className="min-w-0 flex-1 text-sm font-medium text-white">

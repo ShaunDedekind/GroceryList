@@ -50,7 +50,7 @@ export function CategorySection({
   const showDropZone = isDragActive && items.length === 0
 
   return (
-    <motion.section layout={!reducedMotion} className="mb-0.5">
+    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-0.5">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -82,10 +82,11 @@ export function CategorySection({
         {(open || showDropZone) && (
           <motion.div
             key="content"
-            initial={reducedMotion ? false : { height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={reducedMotion ? undefined : { height: 0, opacity: 0 }}
+            initial={reducedMotion ? false : { scaleY: 0, opacity: 0 }}
+            animate={{ scaleY: 1, opacity: 1 }}
+            exit={reducedMotion ? undefined : { scaleY: 0, opacity: 0 }}
             transition={spring}
+            style={{ transformOrigin: 'top' }}
             className="overflow-hidden"
           >
             <div
@@ -97,7 +98,7 @@ export function CategorySection({
               } ${showDropZone ? 'min-h-10' : ''}`}
             >
               <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                <AnimatePresence mode="popLayout">
+                <AnimatePresence mode="sync">
                   {items.map((item) => (
                     <ItemRow
                       key={item.id}

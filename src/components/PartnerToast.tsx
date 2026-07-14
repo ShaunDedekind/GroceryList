@@ -31,7 +31,7 @@ export function PartnerToast({ name, text, onDismiss }: PartnerToastProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={reducedMotion ? undefined : { opacity: 0, y: 8 }}
       transition={springSnappy}
-      className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto max-w-lg rounded-2xl border border-cream-dark bg-white px-4 py-3 text-left shadow-lg dark:border-border-dark dark:bg-surface-raised"
+      className="fixed bottom-[calc(4.5rem+max(0.75rem,env(safe-area-inset-bottom))+var(--vv-offset-bottom,0px))] left-4 right-4 z-40 mx-auto max-w-lg rounded-2xl border border-cream-dark bg-white px-4 py-3 text-left shadow-lg dark:border-border-dark dark:bg-surface-raised"
       role="status"
       aria-live="polite"
     >

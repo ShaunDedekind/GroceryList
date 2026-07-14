@@ -18,7 +18,7 @@ export function DoneCelebration({ onComplete }: DoneCelebrationProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6"
+      className="viewport-overlay safe-top safe-bottom z-50 flex items-center justify-center bg-black/30 px-6"
       initial={reducedMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={reducedMotion ? undefined : { opacity: 0 }}

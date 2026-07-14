@@ -7,6 +7,45 @@ import { springSnappy } from '../lib/motion'
 
 const MAX_RECENT_IN_MENU = 6
 const MENU_GAP = 8
+const SAFE_EDGE_MARGIN = 12
+
+function getSafeAreaInset(side: 'top' | 'bottom' | 'left' | 'right'): number {
+  if (typeof document === 'undefined') return 0
+  const probe = document.createElement('div')
+  probe.style.position = 'fixed'
+  probe.style.visibility = 'hidden'
+  probe.style.pointerEvents = 'none'
+  if (side === 'top') probe.style.paddingTop = 'env(safe-area-inset-top)'
+  if (side === 'bottom') probe.style.paddingBottom = 'env(safe-area-inset-bottom)'
+  if (side === 'left') probe.style.paddingLeft = 'env(safe-area-inset-left)'
+  if (side === 'right') probe.style.paddingRight = 'env(safe-area-inset-right)'
+  document.body.appendChild(probe)
+  const style = getComputedStyle(probe)
+  const value = parseFloat(
+    side === 'top'
+      ? style.paddingTop
+      : side === 'bottom'
+        ? style.paddingBottom
+        : side === 'left'
+          ? style.paddingLeft
+          : style.paddingRight,
+  )
+  document.body.removeChild(probe)
+  return Number.isFinite(value) ? value : 0
+}
+
+function getLayoutViewportHeight(): number {
+  const vv = window.visualViewport
+  if (!vv) return window.innerHeight
+
+  let offsetTop = vv.offsetTop
+  const keyboardLikelyClosed = vv.height >= window.innerHeight * 0.92
+  if (keyboardLikelyClosed && offsetTop > 0) {
+    offsetTop = 0
+  }
+
+  return vv.height + offsetTop
+}
 
 interface ListActionMenuProps {
   open: boolean
@@ -81,16 +120,30 @@ function useMenuPosition(
     const update = () => {
       const rect = anchorRef.current?.getBoundingClientRect()
       if (!rect) return
+
+      const layoutHeight = getLayoutViewportHeight()
+      const safeBottom = Math.max(SAFE_EDGE_MARGIN, getSafeAreaInset('bottom'))
+      const safeRight = Math.max(SAFE_EDGE_MARGIN, getSafeAreaInset('right'))
+
       setPosition({
-        bottom: window.innerHeight - rect.top + MENU_GAP,
-        right: window.innerWidth - rect.right,
+        bottom: Math.max(layoutHeight - rect.top + MENU_GAP, safeBottom),
+        right: Math.max(window.innerWidth - rect.right, safeRight),
       })
     }
 
     update()
+    const vv = window.visualViewport
+    if (vv) {
+      vv.addEventListener('resize', update)
+      vv.addEventListener('scroll', update)
+    }
     window.addEventListener('resize', update)
     window.addEventListener('orientationchange', update)
     return () => {
+      if (vv) {
+        vv.removeEventListener('resize', update)
+        vv.removeEventListener('scroll', update)
+      }
       window.removeEventListener('resize', update)
       window.removeEventListener('orientationchange', update)
     }
@@ -146,7 +199,7 @@ export function ListActionMenu({
   return createPortal(
     <>
       <div
-        className="fixed inset-0 z-50 bg-black/20"
+        className="viewport-overlay z-50 bg-black/20"
         onClick={onClose}
         aria-hidden="true"
       />

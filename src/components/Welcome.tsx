@@ -37,7 +37,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
 
   if (mode === 'home') {
     return (
-      <div className="flex min-h-dvh flex-col bg-cream dark:bg-surface">
+      <div className="safe-top flex min-h-vv h-vv flex-col bg-cream dark:bg-surface">
         <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10">
           <span className="text-5xl">🛒</span>
           <h1 className="mt-5 text-2xl font-bold tracking-tight text-ink dark:text-ink-dark">
@@ -71,7 +71,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
   const isCreate = mode === 'create'
 
   return (
-    <div className="flex min-h-dvh flex-col bg-cream dark:bg-surface">
+    <div className="flex min-h-vv h-vv flex-col bg-cream dark:bg-surface">
       <header className="safe-top flex items-center gap-2 px-4 pt-3">
         <button
           type="button"

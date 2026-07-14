@@ -112,7 +112,7 @@ export function ItemRow({
     <motion.div
       ref={setNodeRef}
       style={sortableStyle}
-      layout={!reducedMotion && !isDragging}
+      layout={!reducedMotion && !isDragging ? 'position' : false}
       initial={reducedMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: isDragging ? 0.35 : 1, y: 0 }}
       exit={
@@ -197,7 +197,7 @@ export function ItemRow({
             onEdit(item)
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className={`min-w-0 flex-1 text-left text-body leading-snug transition-all active:opacity-70 ${
+          className={`min-w-0 flex-1 text-left text-body leading-snug transition-opacity active:opacity-70 ${
             shopMode ? 'line-clamp-2' : 'truncate'
           } ${
             item.checked
