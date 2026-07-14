@@ -110,7 +110,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
             placeholder="Simon"
             required
             autoFocus={isCreate}
-            className="mt-1.5 w-full rounded-xl border border-cream-dark bg-white px-3 py-2.5 text-body outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+            className="mt-1.5 w-full rounded-xl border border-cream-dark bg-white px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
           />
         </label>
 
@@ -124,7 +124,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
               value={listName}
               onChange={(e) => setListName(e.target.value)}
               placeholder="Our Grocery List"
-              className="mt-1.5 w-full rounded-xl border border-cream-dark bg-white px-3 py-2.5 text-body outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+              className="mt-1.5 w-full rounded-xl border border-cream-dark bg-white px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
             />
           </label>
         ) : (

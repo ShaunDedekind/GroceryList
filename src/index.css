@@ -17,6 +17,7 @@
 
   --text-title: 1.125rem;
   --text-body: 0.875rem;
+  --text-input: 1rem;
   --text-meta: 0.75rem;
 }
 
@@ -49,6 +50,17 @@ body {
 .text-body {
   font-size: var(--text-body);
   line-height: 1.4;
+}
+
+.text-input {
+  font-size: var(--text-input);
+  line-height: 1.4;
+}
+
+input,
+textarea,
+select {
+  font-size: max(16px, var(--text-input));
 }
 
 .text-meta {

@@ -133,7 +133,7 @@ export function AisleSectionsSettings({
                   if (e.key === 'Escape') setEditingId(null)
                 }}
                 autoFocus
-                className="min-w-0 flex-1 rounded-lg border border-cream-dark bg-white px-2 py-1 text-body outline-none focus:border-sage dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+                className="min-w-0 flex-1 rounded-lg border border-cream-dark bg-white px-2 py-1 text-input outline-none focus:border-sage dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
               />
             ) : (
               <button

@@ -252,7 +252,7 @@ export function ListView({
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
+                className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
               />
             </label>
 
@@ -264,7 +264,7 @@ export function ListView({
                 type="text"
                 value={editDisplayName}
                 onChange={(e) => setEditDisplayName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
+                className="mt-1.5 w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:bg-surface dark:text-ink-dark"
               />
             </label>
 

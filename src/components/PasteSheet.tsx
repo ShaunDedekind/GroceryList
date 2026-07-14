@@ -96,7 +96,7 @@ export function PasteSheet({ listId, onAddItems, onClose }: PasteSheetProps) {
           onChange={(e) => setText(e.target.value)}
           placeholder="eggs, bread, chicken thighs&#10;or paste a recipe…"
           rows={4}
-          className="mt-3 w-full resize-none rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface dark:text-ink-dark"
+          className="mt-3 w-full resize-none rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface dark:text-ink-dark"
         />
 
         {error && (

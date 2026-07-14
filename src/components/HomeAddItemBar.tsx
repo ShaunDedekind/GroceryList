@@ -188,7 +188,7 @@ export function HomeAddItemBar({
             }}
             placeholder="Fix, buy, or remember at home…"
             enterKeyHint="done"
-            className="w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-body outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
+            className="w-full rounded-xl border border-cream-dark bg-cream/50 px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:bg-surface-raised dark:text-ink-dark"
           />
 
           {showHints && recentHints.length > 0 && (
