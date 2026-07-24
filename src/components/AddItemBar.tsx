@@ -166,7 +166,7 @@ export function AddItemBar({
   }, [menuOpen])
 
   return (
-    <div className="relative z-30 border-t border-separator bg-cream px-gutter py-2.5 dark:bg-surface">
+    <div className="relative z-30 border-t border-line bg-surface-strong px-gutter py-2.5 backdrop-blur-xl dark:bg-surface-strong">
       {showCategories && (
         <div onClick={(e) => e.stopPropagation()}>
           <CategoryPicker
@@ -184,7 +184,7 @@ export function AddItemBar({
         </p>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="surface-card flex items-center gap-2 p-2">
         <button
           type="button"
           onClick={(e) => {
@@ -192,10 +192,10 @@ export function AddItemBar({
             setShowCategories(!showCategories)
             setMenuOpen(false)
           }}
-          className={`press-scale flex h-11 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-2.5 text-footnote font-medium active:bg-cream-dark/80 dark:bg-surface-raised dark:text-warm-gray-light ${
+          className={`press-scale flex h-10 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-2.5 text-footnote font-medium ${
             isSuggested
               ? 'bg-sage/15 text-sage-dark ring-2 ring-sage/30 dark:text-sage-light'
-              : 'bg-cream-dark text-warm-gray'
+              : 'surface-soft text-warm-gray dark:text-warm-gray-light'
           }`}
           title={isSuggested ? 'Category suggested' : undefined}
         >
@@ -219,7 +219,7 @@ export function AddItemBar({
             }}
             placeholder="Add item…"
             enterKeyHint="done"
-            className="w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:text-ink-dark"
+            className="h-10 w-full rounded-[var(--radius-md)] border border-line surface-soft px-3 text-input outline-none focus:border-sage/40 focus:ring-2 focus:ring-sage/20 dark:text-ink-dark"
           />
 
           {showHints && recentHints.length > 0 && (
@@ -251,10 +251,10 @@ export function AddItemBar({
           aria-label="More actions"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          className={`press-scale flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-warm-gray active:bg-cream-dark/80 dark:text-warm-gray-light dark:active:bg-surface-raised ${
+          className={`press-scale flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-warm-gray dark:text-warm-gray-light ${
             reorderMode || shopMode
               ? 'bg-sage/15 ring-2 ring-sage/30 text-sage dark:text-sage-light'
-              : 'bg-cream-dark dark:bg-surface-raised'
+              : 'surface-soft'
           }`}
         >
           <Icon name="more" size="md" />
@@ -284,7 +284,7 @@ export function AddItemBar({
               : { scale: [1, 1.15, 1] }
           }
           transition={springSnappy}
-          className="press-scale flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-sage text-white disabled:opacity-40 active:bg-sage-dark"
+          className="press-scale btn-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] disabled:opacity-40"
           aria-label="Add item"
         >
           <Icon name="add" size="md" />

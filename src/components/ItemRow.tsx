@@ -24,7 +24,7 @@ interface ItemRowProps {
   reorderMode?: boolean
   shopMode?: boolean
   isDragOverlay?: boolean
-  showSeparator?: boolean
+  card?: boolean
 }
 
 const DELETE_THRESHOLD = -72
@@ -35,7 +35,7 @@ function DragHandle(props: HTMLAttributes<HTMLButtonElement>) {
     <button
       type="button"
       {...props}
-      className={`flex h-11 w-8 shrink-0 touch-none items-center justify-center rounded-[var(--radius-sm)] text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface ${props.className ?? ''}`}
+      className={`flex h-10 w-8 shrink-0 touch-none items-center justify-center rounded-[var(--radius-sm)] text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface ${props.className ?? ''}`}
       aria-label="Reorder item"
     >
       <Icon name="reorder" size="sm" />
@@ -52,7 +52,7 @@ export function ItemRow({
   reorderMode = false,
   shopMode = false,
   isDragOverlay = false,
-  showSeparator = true,
+  card = true,
 }: ItemRowProps) {
   const reducedMotion = useReducedMotion()
   const x = useMotionValue(0)
@@ -104,8 +104,6 @@ export function ItemRow({
     }
   }
 
-  const checkboxSize = shopMode ? 'h-11 w-11' : 'h-9 w-9'
-
   return (
     <motion.div
       ref={setNodeRef}
@@ -119,7 +117,7 @@ export function ItemRow({
           : { opacity: 0, x: -48, transition: { duration: 0.2 } }
       }
       transition={spring}
-      className={`group relative ${showSeparator ? 'border-b border-separator' : ''}`}
+      className={`group relative ${card ? 'surface-card overflow-hidden' : ''}`}
     >
       <div className="relative overflow-hidden">
         <motion.div
@@ -145,8 +143,10 @@ export function ItemRow({
           onPointerDown={startLongPress}
           onPointerUp={cancelLongPress}
           onPointerLeave={cancelLongPress}
-          className={`relative flex min-h-touch items-center bg-grouped pr-1 dark:bg-surface-raised ${
-            shopMode ? 'gap-2.5 py-2' : reorderMode ? 'gap-1.5 py-1.5' : 'gap-2 py-1.5'
+          className={`relative flex min-h-touch items-center gap-3.5 py-[var(--spacing-row-y)] pr-1 ${
+            reorderMode ? 'pl-1' : 'pl-[var(--spacing-row-x)]'
+          } ${
+            card ? '' : 'border-b border-separator bg-grouped dark:bg-surface-raised'
           }`}
         >
           {reorderMode && !isDragOverlay && (
@@ -156,28 +156,30 @@ export function ItemRow({
           <motion.button
             type="button"
             onClick={handleToggle}
-            whileTap={reducedMotion ? undefined : { scale: 0.85 }}
+            whileTap={reducedMotion ? undefined : { scale: 0.9 }}
             transition={springSnappy}
-            className={`flex shrink-0 items-center justify-center rounded-full border-2 transition-colors ${checkboxSize} ${
-              item.checked
-                ? 'border-sage bg-sage text-white'
-                : 'border-warm-gray-light/50 active:border-sage'
-            }`}
+            className="flex min-h-touch min-w-touch shrink-0 items-center justify-center"
             aria-label={item.checked ? 'Uncheck item' : 'Check item'}
           >
-            <AnimatePresence mode="wait">
-              {item.checked && (
-                <motion.span
-                  key="check"
-                  initial={reducedMotion ? false : { scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={springSnappy}
-                >
-                  <Icon name="check" size="sm" />
-                </motion.span>
-              )}
-            </AnimatePresence>
+            <span
+              className={`item-check flex items-center justify-center ${
+                item.checked ? 'item-check-checked' : ''
+              }`}
+            >
+              <AnimatePresence mode="wait">
+                {item.checked && (
+                  <motion.span
+                    key="check"
+                    initial={reducedMotion ? false : { scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={springSnappy}
+                  >
+                    <Icon name="check" size="sm" />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </span>
           </motion.button>
 
           <button
@@ -187,7 +189,7 @@ export function ItemRow({
               onEdit(item)
             }}
             onPointerDown={(e) => e.stopPropagation()}
-            className={`min-w-0 flex-1 text-left text-headline leading-snug transition-opacity active:opacity-70 ${
+            className={`min-w-0 flex-1 text-left text-row-title leading-snug transition-opacity active:opacity-70 ${
               shopMode ? 'line-clamp-2' : 'truncate'
             } ${
               item.checked
@@ -207,7 +209,7 @@ export function ItemRow({
             <button
               type="button"
               onClick={handleDelete}
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-warm-gray-light transition-opacity active:bg-error-banner ${
+              className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] text-warm-gray-light transition-opacity active:bg-error-banner ${
                 showDeleteHint
                   ? 'opacity-100 text-error'
                   : 'opacity-0 group-hover:opacity-70 hover:!opacity-100'

@@ -27,10 +27,10 @@ export function TabBar({
 
   return (
     <nav
-      className="safe-bottom sticky bottom-0 z-20 border-t border-separator bg-cream dark:bg-surface"
+      className="safe-bottom sticky bottom-0 z-20 px-3 pb-2 pt-1"
       aria-label="List sections"
     >
-      <div className="flex">
+      <div className="flex gap-1 rounded-[19px] border border-line bg-surface-strong p-1.5 shadow-card backdrop-blur-xl dark:bg-surface-strong">
         {tabs.map((tab) => {
           const selected = activeTab === tab.id
           return (
@@ -40,25 +40,27 @@ export function TabBar({
               role="tab"
               aria-selected={selected}
               onClick={() => onTabChange(tab.id)}
-              className={`press-scale relative flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-footnote font-medium transition-colors ${
+              className={`press-scale relative flex min-h-[42px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[14px] py-1.5 text-footnote font-semibold transition-colors ${
                 selected
-                  ? 'text-sage dark:text-sage-light'
+                  ? 'bg-surface-strong text-sage shadow-card dark:bg-surface-raised dark:text-sage-light'
                   : 'text-warm-gray active:text-ink dark:text-warm-gray-light dark:active:text-ink-dark'
               }`}
             >
-              <Icon name={selected ? tab.iconFilled : tab.icon} size="md" />
+              <span className="relative">
+                <Icon name={selected ? tab.iconFilled : tab.icon} size="md" />
+                {tab.count > 0 && (
+                  <span
+                    className={`absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-meta font-bold leading-none ${
+                      selected
+                        ? 'bg-sage text-white'
+                        : 'surface-soft text-warm-gray dark:text-warm-gray-light'
+                    }`}
+                  >
+                    {tab.count > 99 ? '99+' : tab.count}
+                  </span>
+                )}
+              </span>
               <span>{tab.label}</span>
-              {tab.count > 0 && (
-                <span
-                  className={`absolute right-[calc(50%-2rem)] top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-meta font-bold leading-none ${
-                    selected
-                      ? 'bg-sage text-white'
-                      : 'bg-cream-dark text-warm-gray dark:bg-surface-raised dark:text-warm-gray-light'
-                  }`}
-                >
-                  {tab.count > 99 ? '99+' : tab.count}
-                </span>
-              )}
             </button>
           )
         })}
