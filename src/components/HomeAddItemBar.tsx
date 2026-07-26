@@ -136,7 +136,7 @@ export function HomeAddItemBar({
   }, [showCategories])
 
   return (
-    <div className="relative z-30 border-t border-line bg-surface-strong px-gutter py-2.5 backdrop-blur-xl dark:bg-surface-strong">
+    <div className="relative z-30 border-t border-line bg-surface-strong px-gutter py-1.5 backdrop-blur-xl dark:bg-surface-strong">
       {showCategories && (
         <div onClick={(e) => e.stopPropagation()}>
           <CategoryPicker
@@ -154,14 +154,14 @@ export function HomeAddItemBar({
         </p>
       )}
 
-      <div className="surface-card flex items-center gap-2 p-2">
+      <div className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation()
             setShowCategories(!showCategories)
           }}
-          className={`press-scale flex h-10 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-2.5 text-footnote font-medium ${
+          className={`press-scale flex h-9 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-2 text-meta font-medium ${
             isSuggested
               ? 'bg-sage/15 text-sage-dark ring-2 ring-sage/30 dark:text-sage-light'
               : 'surface-soft text-warm-gray dark:text-warm-gray-light'
@@ -218,7 +218,7 @@ export function HomeAddItemBar({
               : { scale: [1, 1.15, 1] }
           }
           transition={springSnappy}
-          className="press-scale btn-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] disabled:opacity-40"
+          className="press-scale btn-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] disabled:opacity-40"
           aria-label="Add item"
         >
           <Icon name="add" size="md" />

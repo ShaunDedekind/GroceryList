@@ -148,13 +148,13 @@ export function ListView({
         <button
           type="button"
           onClick={openSettings}
-          className="press-scale flex min-h-touch w-full items-center gap-2 px-gutter py-2 text-left active:opacity-80"
+          className="press-scale flex w-full items-center gap-2 px-gutter py-1.5 text-left active:opacity-80"
         >
           <div className="min-w-0 flex-1">
             <p className="truncate text-row-title text-ink dark:text-ink-dark">
               {session.listName}
             </p>
-            <p className="truncate text-footnote text-warm-gray dark:text-warm-gray-light">
+            <p className="truncate text-meta text-warm-gray dark:text-warm-gray-light">
               {tabLabel}
               {' · '}
               {subtitle}
@@ -162,7 +162,7 @@ export function ListView({
               {session.displayName}
             </p>
           </div>
-          <span className="surface-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-warm-gray dark:text-warm-gray-light">
+          <span className="surface-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-warm-gray dark:text-warm-gray-light">
             <Icon name="settings" size="md" />
           </span>
         </button>

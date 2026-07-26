@@ -27,10 +27,10 @@ export function TabBar({
 
   return (
     <nav
-      className="safe-bottom sticky bottom-0 z-20 px-3 pb-2 pt-1"
+      className="safe-bottom sticky bottom-0 z-20 px-2 pb-1.5 pt-0.5"
       aria-label="List sections"
     >
-      <div className="flex gap-1 rounded-[19px] border border-line bg-surface-strong p-1.5 shadow-card backdrop-blur-xl dark:bg-surface-strong">
+      <div className="flex gap-1 rounded-[19px] border border-line bg-surface-strong p-1 shadow-card backdrop-blur-xl dark:bg-surface-strong">
         {tabs.map((tab) => {
           const selected = activeTab === tab.id
           return (
@@ -40,7 +40,7 @@ export function TabBar({
               role="tab"
               aria-selected={selected}
               onClick={() => onTabChange(tab.id)}
-              className={`press-scale relative flex min-h-[42px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[14px] py-1.5 text-footnote font-semibold transition-colors ${
+              className={`press-scale relative flex min-h-[36px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[14px] py-1 text-meta font-semibold transition-colors ${
                 selected
                   ? 'bg-surface-strong text-sage shadow-card dark:bg-surface-raised dark:text-sage-light'
                   : 'text-warm-gray active:text-ink dark:text-warm-gray-light dark:active:text-ink-dark'

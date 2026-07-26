@@ -25,6 +25,7 @@ interface ItemRowProps {
   shopMode?: boolean
   isDragOverlay?: boolean
   card?: boolean
+  showSeparator?: boolean
 }
 
 const DELETE_THRESHOLD = -72
@@ -35,7 +36,7 @@ function DragHandle(props: HTMLAttributes<HTMLButtonElement>) {
     <button
       type="button"
       {...props}
-      className={`flex h-10 w-8 shrink-0 touch-none items-center justify-center rounded-[var(--radius-sm)] text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface ${props.className ?? ''}`}
+      className={`flex h-9 w-7 shrink-0 touch-none items-center justify-center rounded-[var(--radius-sm)] text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface ${props.className ?? ''}`}
       aria-label="Reorder item"
     >
       <Icon name="reorder" size="sm" />
@@ -52,7 +53,8 @@ export function ItemRow({
   reorderMode = false,
   shopMode = false,
   isDragOverlay = false,
-  card = true,
+  card = false,
+  showSeparator = true,
 }: ItemRowProps) {
   const reducedMotion = useReducedMotion()
   const x = useMotionValue(0)
@@ -143,10 +145,10 @@ export function ItemRow({
           onPointerDown={startLongPress}
           onPointerUp={cancelLongPress}
           onPointerLeave={cancelLongPress}
-          className={`relative flex min-h-touch items-center gap-3.5 py-[var(--spacing-row-y)] pr-1 ${
+          className={`relative flex min-h-row items-center gap-2.5 py-[var(--spacing-row-y)] pr-1 ${
             reorderMode ? 'pl-1' : 'pl-[var(--spacing-row-x)]'
           } ${
-            card ? '' : 'border-b border-separator bg-grouped dark:bg-surface-raised'
+            !card && showSeparator ? 'border-b border-separator' : ''
           }`}
         >
           {reorderMode && !isDragOverlay && (
@@ -158,7 +160,7 @@ export function ItemRow({
             onClick={handleToggle}
             whileTap={reducedMotion ? undefined : { scale: 0.9 }}
             transition={springSnappy}
-            className="flex min-h-touch min-w-touch shrink-0 items-center justify-center"
+            className="hit-touch -my-1 shrink-0"
             aria-label={item.checked ? 'Uncheck item' : 'Check item'}
           >
             <span
@@ -189,7 +191,7 @@ export function ItemRow({
               onEdit(item)
             }}
             onPointerDown={(e) => e.stopPropagation()}
-            className={`min-w-0 flex-1 text-left text-row-title leading-snug transition-opacity active:opacity-70 ${
+            className={`min-w-0 flex-1 text-left text-row-title leading-tight transition-opacity active:opacity-70 ${
               shopMode ? 'line-clamp-2' : 'truncate'
             } ${
               item.checked
@@ -209,7 +211,7 @@ export function ItemRow({
             <button
               type="button"
               onClick={handleDelete}
-              className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] text-warm-gray-light transition-opacity active:bg-error-banner ${
+              className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] text-warm-gray-light transition-opacity active:bg-error-banner ${
                 showDeleteHint
                   ? 'opacity-100 text-error'
                   : 'opacity-0 group-hover:opacity-70 hover:!opacity-100'

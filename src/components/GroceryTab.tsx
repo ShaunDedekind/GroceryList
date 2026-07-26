@@ -276,7 +276,7 @@ export function GroceryTab({
 
       <main
         ref={mainRef}
-        className="relative flex-1 overflow-y-auto px-gutter pt-1.5 pb-3"
+        className="relative flex-1 overflow-y-auto px-gutter pt-1 pb-2"
         onScroll={onScroll}
         {...handlers}
       >

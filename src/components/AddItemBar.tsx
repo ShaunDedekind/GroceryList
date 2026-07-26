@@ -166,7 +166,7 @@ export function AddItemBar({
   }, [menuOpen])
 
   return (
-    <div className="relative z-30 border-t border-line bg-surface-strong px-gutter py-2.5 backdrop-blur-xl dark:bg-surface-strong">
+    <div className="relative z-30 border-t border-line bg-surface-strong px-gutter py-1.5 backdrop-blur-xl dark:bg-surface-strong">
       {showCategories && (
         <div onClick={(e) => e.stopPropagation()}>
           <CategoryPicker
@@ -184,7 +184,7 @@ export function AddItemBar({
         </p>
       )}
 
-      <div className="surface-card flex items-center gap-2 p-2">
+      <div className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={(e) => {
@@ -192,7 +192,7 @@ export function AddItemBar({
             setShowCategories(!showCategories)
             setMenuOpen(false)
           }}
-          className={`press-scale flex h-10 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-2.5 text-footnote font-medium ${
+          className={`press-scale flex h-9 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-2 text-meta font-medium ${
             isSuggested
               ? 'bg-sage/15 text-sage-dark ring-2 ring-sage/30 dark:text-sage-light'
               : 'surface-soft text-warm-gray dark:text-warm-gray-light'
@@ -251,7 +251,7 @@ export function AddItemBar({
           aria-label="More actions"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          className={`press-scale flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-warm-gray dark:text-warm-gray-light ${
+          className={`press-scale flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-warm-gray dark:text-warm-gray-light ${
             reorderMode || shopMode
               ? 'bg-sage/15 ring-2 ring-sage/30 text-sage dark:text-sage-light'
               : 'surface-soft'
@@ -284,7 +284,7 @@ export function AddItemBar({
               : { scale: [1, 1.15, 1] }
           }
           transition={springSnappy}
-          className="press-scale btn-accent flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] disabled:opacity-40"
+          className="press-scale btn-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] disabled:opacity-40"
           aria-label="Add item"
         >
           <Icon name="add" size="md" />

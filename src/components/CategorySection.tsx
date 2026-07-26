@@ -51,17 +51,17 @@ export function CategorySection({
   const showDropZone = isDragActive && items.length === 0
 
   return (
-    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-2">
+    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-1.5">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="press-scale flex w-full items-center gap-2 px-1 py-1.5 active:opacity-70"
+        className="press-scale flex w-full items-center gap-1.5 px-0.5 py-1 active:opacity-70"
       >
-        <span className="shrink-0 text-base">{categoryEmoji}</span>
-        <span className="min-w-0 flex-1 truncate text-left text-footnote font-semibold uppercase tracking-wide text-warm-gray dark:text-warm-gray-light">
+        <span className="shrink-0 text-sm">{categoryEmoji}</span>
+        <span className="min-w-0 flex-1 truncate text-left text-meta font-semibold uppercase tracking-wide text-warm-gray dark:text-warm-gray-light">
           {categoryLabel}
         </span>
-        <span className="surface-soft shrink-0 rounded-full px-1.5 py-0.5 text-meta font-medium text-warm-gray dark:text-warm-gray-light">
+        <span className="surface-soft shrink-0 rounded-full px-1 py-0.5 text-meta font-medium text-warm-gray dark:text-warm-gray-light">
           {unchecked > 0 ? unchecked : items.length}
         </span>
         <motion.span
@@ -86,13 +86,13 @@ export function CategorySection({
           >
             <div
               ref={setNodeRef}
-              className={`relative flex flex-col gap-2.5 ${
-                isOver ? 'rounded-[var(--radius-card)] ring-1 ring-sage/30' : ''
+              className={`surface-card overflow-hidden ${
+                isOver ? 'ring-1 ring-sage/30' : ''
               } ${showDropZone ? 'min-h-10' : ''}`}
             >
               <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
                 <AnimatePresence mode="sync">
-                  {items.map((item) => (
+                  {items.map((item, index) => (
                     <ItemRow
                       key={item.id}
                       item={item}
@@ -101,12 +101,13 @@ export function CategorySection({
                       onDelete={onDelete}
                       onEdit={onEdit}
                       reorderMode={reorderMode}
+                      showSeparator={index < items.length - 1}
                     />
                   ))}
                 </AnimatePresence>
               </SortableContext>
               {showDropZone && (
-                <p className="surface-card px-3 py-3 text-center text-footnote text-warm-gray-light">
+                <p className="px-3 py-2 text-center text-footnote text-warm-gray-light">
                   Drop here
                 </p>
               )}
