@@ -47,7 +47,7 @@ export function CategorySection({
 
   return (
     <motion.section layout={!reducedMotion ? 'position' : false} className="mb-1">
-      <h2 className="sticky top-0 z-[1] bg-cream/95 px-1 py-1 text-meta font-semibold uppercase tracking-wide text-warm-gray backdrop-blur-sm dark:bg-surface/95 dark:text-warm-gray-light">
+      <h2 className="px-1 py-1 text-meta font-semibold uppercase tracking-wide text-warm-gray dark:text-warm-gray-light">
         <span className="mr-1" aria-hidden="true">
           {categoryEmoji}
         </span>

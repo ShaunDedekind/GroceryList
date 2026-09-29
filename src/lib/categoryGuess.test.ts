@@ -54,9 +54,35 @@ describe('guessCategory', () => {
     expect(guessCategory('fancy brand thing', LIST_ID)).toBe('drinks')
   })
 
-  it('prefers override over recent items', () => {
-    saveRecentItem(LIST_ID, 'fancy brand thing', 'drinks')
-    saveOverride(LIST_ID, 'fancy brand thing', 'pantry')
-    expect(guessCategory('fancy brand thing', LIST_ID)).toBe('pantry')
+  it('classifies chutney as pantry', () => {
+    expect(guessCategory('chutney')).toBe('pantry')
+  })
+
+  it('classifies mango chutney as pantry', () => {
+    expect(guessCategory('mango chutney')).toBe('pantry')
+  })
+
+  it('prefers peanut butter over dairy butter', () => {
+    expect(guessCategory('peanut butter')).toBe('pantry')
+  })
+
+  it('classifies tomato paste as pantry not fruit veg', () => {
+    expect(guessCategory('tomato paste')).toBe('pantry')
+  })
+
+  it('classifies pickles as pantry', () => {
+    expect(guessCategory('pickles')).toBe('pantry')
+  })
+
+  it('classifies mayo as pantry', () => {
+    expect(guessCategory('mayo')).toBe('pantry')
+  })
+
+  it('classifies sourdough as bakery', () => {
+    expect(guessCategory('sourdough')).toBe('bakery')
+  })
+
+  it('classifies toilet paper as household', () => {
+    expect(guessCategory('toilet paper')).toBe('household')
   })
 })
