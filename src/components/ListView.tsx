@@ -14,7 +14,6 @@ import { TabBar } from './TabBar'
 import { PartnerToast } from './PartnerToast'
 import { AisleSectionsSettings } from './AisleSectionsSettings'
 import { BottomSheet } from './BottomSheet'
-import { Icon } from './Icon'
 
 interface ListViewProps {
   session: Session
@@ -37,15 +36,6 @@ export function ListView({
   const counts = useSectionCounts(session.listId)
   const { groceryResolved, visibleCategories, categoryIds, saveConfig } =
     useCategoryConfig(session.listId, 'grocery')
-
-  const groceryMainRef = useRef<HTMLElement>(null)
-  const homeMainRef = useRef<HTMLElement>(null)
-  const henryMainRef = useRef<HTMLElement>(null)
-  const scrollPositions = useRef<Record<ListSection, number>>({
-    grocery: 0,
-    home: 0,
-    henry: 0,
-  })
 
   const [partnerToast, setPartnerToast] = useState<{
     name: string
@@ -74,36 +64,6 @@ export function ListView({
       })
     },
     [],
-  )
-
-  const mainRefFor = useCallback((section: ListSection) => {
-    if (section === 'home') return homeMainRef
-    if (section === 'henry') return henryMainRef
-    return groceryMainRef
-  }, [])
-
-  const saveScrollPosition = useCallback(
-    (section: ListSection) => {
-      const ref = mainRefFor(section)
-      if (ref.current) {
-        scrollPositions.current[section] = ref.current.scrollTop
-      }
-    },
-    [mainRefFor],
-  )
-
-  const handleTabChange = useCallback(
-    (tab: ListSection) => {
-      saveScrollPosition(activeTab)
-      setActiveTab(tab)
-      requestAnimationFrame(() => {
-        const ref = mainRefFor(tab)
-        if (ref.current) {
-          ref.current.scrollTop = scrollPositions.current[tab]
-        }
-      })
-    },
-    [activeTab, saveScrollPosition, setActiveTab, mainRefFor],
   )
 
   const openSettings = () => {
@@ -144,85 +104,56 @@ export function ListView({
     await saveConfig(buildCategoryConfigFromResolved(next))
   }
 
-  const subtitle =
-    activeTab === 'home'
-      ? counts.home === 0
-        ? 'All caught up'
-        : `${counts.home} to do`
-      : activeTab === 'henry'
-        ? counts.henry === 0
-          ? 'All clear'
-          : `${counts.henry} to do`
-        : counts.grocery === 0
-          ? 'All done!'
-          : `${counts.grocery} left`
-
-  const tabLabel =
-    activeTab === 'home' ? 'Home' : activeTab === 'henry' ? 'Henry' : 'Shop'
-
   return (
     <div className="flex min-h-vv h-vv flex-col">
-      <header className="safe-top sticky top-[var(--vv-offset-top,0px)] z-10 bg-surface-strong shadow-[0_10px_30px_rgba(34,34,34,0.04)] backdrop-blur-xl dark:bg-surface-strong">
-        <button
-          type="button"
-          onClick={openSettings}
-          className="press-scale flex w-full items-center gap-2 px-gutter py-1.5 text-left active:opacity-80"
-        >
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-row-title text-ink dark:text-ink-dark">
-              {session.listName}
-            </p>
-            <p className="truncate text-meta text-warm-gray dark:text-warm-gray-light">
-              {tabLabel}
-              {' · '}
-              {subtitle}
-              {' · '}
-              {session.displayName}
-            </p>
-          </div>
-          <span className="hit-touch shrink-0 text-warm-gray dark:text-warm-gray-light">
-            <Icon name="settings" size="sm" />
-          </span>
-        </button>
-      </header>
-
       <div className="flex min-h-0 flex-1 flex-col">
-        {activeTab === 'grocery' ? (
+        <div
+          className="flex min-h-0 flex-1 flex-col"
+          hidden={activeTab !== 'grocery'}
+        >
           <GroceryTab
             session={session}
             showDone={showDoneGrocery}
             onShowDoneChange={setShowDoneGrocery}
             onRemoteInsert={handleRemoteInsert('grocery')}
-            mainRef={groceryMainRef}
-            onScroll={() => saveScrollPosition('grocery')}
+            active={activeTab === 'grocery'}
+            onOpenSettings={openSettings}
             resolved={groceryResolved}
             visibleCategories={visibleCategories as ResolvedCategory[]}
             categoryIds={categoryIds as CategoryId[]}
           />
-        ) : activeTab === 'home' ? (
+        </div>
+        <div
+          className="flex min-h-0 flex-1 flex-col"
+          hidden={activeTab !== 'home'}
+        >
           <HomeTab
             session={session}
             showDone={showDoneHome}
             onShowDoneChange={setShowDoneHome}
             onRemoteInsert={handleRemoteInsert('home')}
-            mainRef={homeMainRef}
-            onScroll={() => saveScrollPosition('home')}
+            active={activeTab === 'home'}
+            onOpenSettings={openSettings}
           />
-        ) : (
+        </div>
+        <div
+          className="flex min-h-0 flex-1 flex-col"
+          hidden={activeTab !== 'henry'}
+        >
           <HenryTab
             session={session}
             showDone={showDoneHenry}
             onShowDoneChange={setShowDoneHenry}
             onRemoteInsert={handleRemoteInsert('henry')}
-            mainRef={henryMainRef}
-            onScroll={() => saveScrollPosition('henry')}
+            active={activeTab === 'henry'}
+            onOpenSettings={openSettings}
           />
-        )}
+        </div>
       </div>
 
       <TabBar
         activeTab={activeTab}
-        onTabChange={handleTabChange}
+        onTabChange={setActiveTab}
         groceryCount={counts.grocery}
         homeCount={counts.home}
         henryCount={counts.henry}

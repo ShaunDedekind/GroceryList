@@ -12,7 +12,7 @@ export function normalizeItemSection(section: unknown): ListSection {
 
 export function inboundEmailAddress(
   listCode: string,
-  domain = 'inbound.household.app',
+  domain = 'example.invalid',
 ): string {
   return `henry+${listCode.toUpperCase()}@${domain}`
 }

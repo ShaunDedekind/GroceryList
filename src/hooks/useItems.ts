@@ -51,10 +51,11 @@ function sameItemList(current: GroceryItem[], next: GroceryItem[]): boolean {
 export interface UseItemsOptions {
   section: ListSection
   onRemoteInsert?: (item: GroceryItem) => void
+  active?: boolean
 }
 
 export function useItems(session: Session, options: UseItemsOptions) {
-  const { section, onRemoteInsert } = options
+  const { section, onRemoteInsert, active = true } = options
   const [items, setItems] = useState<GroceryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -170,21 +171,25 @@ export function useItems(session: Session, options: UseItemsOptions) {
       )
       .subscribe()
 
-    const pollInterval = setInterval(pollItems, 3000)
-
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
-      clearInterval(pollInterval)
     }
   }, [
     session.listId,
     session.displayName,
     section,
     applyFetchResult,
-    pollItems,
     onRemoteInsert,
   ])
+
+  useEffect(() => {
+    if (!active) return
+    const pollInterval = setInterval(() => {
+      void pollItems()
+    }, 3000)
+    return () => clearInterval(pollInterval)
+  }, [active, pollItems])
 
   const setDragging = useCallback((dragging: boolean) => {
     isDraggingRef.current = dragging

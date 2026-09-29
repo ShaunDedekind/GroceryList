@@ -1,18 +1,18 @@
 export function SkeletonList() {
   return (
-    <div className="space-y-2 px-0.5 pt-1">
+    <div className="space-y-6">
       {[1, 2, 3].map((section) => (
-        <div key={section} className="space-y-1">
-          <div className="h-3 w-24 animate-pulse rounded-md bg-cream-dark dark:bg-surface-raised" />
-          <div className="surface-card overflow-hidden">
+        <div key={section}>
+          <div className="mx-gutter mb-1.5 h-3 w-24 animate-pulse rounded-md bg-cream dark:bg-surface-raised" />
+          <div className="surface-card mx-gutter overflow-hidden">
             {[1, 2, 3].map((row) => (
               <div
                 key={row}
-                className={`flex items-center gap-2.5 px-[var(--spacing-row-x)] py-[var(--spacing-row-y)] ${
-                  row < 3 ? 'border-b border-separator' : ''
-                }`}
+                className="flex min-h-row items-center"
               >
-                <div className="h-[22px] w-[22px] animate-pulse rounded-[8px] bg-cream-dark dark:bg-surface" />
+                <div className="hit-touch">
+                  <div className="h-[22px] w-[22px] animate-pulse rounded-full bg-cream-dark dark:bg-surface" />
+                </div>
                 <div
                   className="h-3 flex-1 animate-pulse rounded-md bg-cream-dark dark:bg-surface"
                   style={{ maxWidth: `${60 + row * 12}%` }}

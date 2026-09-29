@@ -31,15 +31,16 @@ import { SkeletonList } from './SkeletonList'
 import { DragOverlayItem } from './DragOverlayItem'
 import { ShopFlatList } from './ShopFlatList'
 import { DoneCelebration } from './DoneCelebration'
-import { Icon } from './Icon'
+import { CompactTitleBar, LargeTitle } from './ScreenHeader'
+import { listCountLabel, useCompactTitle } from '../hooks/useCompactTitle'
 
 interface GroceryTabProps {
   session: Session
   showDone: boolean
   onShowDoneChange: (show: boolean) => void
   onRemoteInsert: (item: GroceryItem) => void
-  mainRef: React.RefObject<HTMLElement | null>
-  onScroll?: () => void
+  active: boolean
+  onOpenSettings: () => void
   resolved: ResolvedCategory[]
   visibleCategories: ResolvedCategory[]
   categoryIds: readonly CategoryId[]
@@ -50,8 +51,8 @@ export function GroceryTab({
   showDone,
   onShowDoneChange,
   onRemoteInsert,
-  mainRef,
-  onScroll,
+  active,
+  onOpenSettings,
   resolved,
   visibleCategories,
   categoryIds,
@@ -69,7 +70,11 @@ export function GroceryTab({
     clearChecked,
     refetch,
     setDragging,
-  } = useItems(session, { section: 'grocery', onRemoteInsert })
+  } = useItems(session, { section: 'grocery', onRemoteInsert, active })
+
+  const mainRef = useRef<HTMLElement | null>(null)
+  const titleRef = useRef<HTMLDivElement | null>(null)
+  const compactTitle = useCompactTitle(mainRef, titleRef)
 
   const [showShare, setShowShare] = useState(false)
   const [showPaste, setShowPaste] = useState(false)
@@ -247,51 +252,26 @@ export function GroceryTab({
     )
   }
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {shopMode && (
-        <div className="flex items-center border-t border-sage/20 bg-sage/10 px-4 py-1.5 dark:border-sage/30 dark:bg-sage/5">
-          <p className="text-meta font-medium text-sage dark:text-sage-light">
-            Shop mode
-          </p>
-        </div>
-      )}
+  const subtitle = listCountLabel(uncheckedCount, 'left', 'All done!', loading)
 
-      {reorderMode && (
-        <div className="flex items-center justify-between gap-3 border-t border-sage/20 bg-sage/10 px-4 py-2 dark:border-sage/30 dark:bg-sage/5">
-          <p className="text-meta text-ink dark:text-ink-dark">
-            Drag items to reorder
-          </p>
-          <button
-            type="button"
-            onClick={exitReorderMode}
-            className="shrink-0 rounded-full bg-sage px-3 py-1 text-meta font-semibold text-white active:bg-sage-dark"
-          >
-            Done
-          </button>
-        </div>
-      )}
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <CompactTitleBar
+        title="Shop"
+        visible={compactTitle}
+        onOpenSettings={onOpenSettings}
+      />
 
       <main
         ref={mainRef}
-        className="relative flex-1 overflow-y-auto px-gutter pt-1 pb-2"
-        onScroll={onScroll}
+        className="relative flex-1 overflow-y-auto pb-2"
         {...handlers}
       >
         <div
-          className="pointer-events-none flex h-10 origin-top items-center justify-center overflow-hidden text-meta text-sage transition-[transform,opacity] duration-150 dark:text-sage-light"
+          className="pointer-events-none flex items-center justify-center overflow-hidden text-meta text-sage dark:text-sage-light"
           style={{
-            transform: `scaleY(${
-              pullDistance > 0 || isRefreshing
-                ? Math.min(
-                    Math.max(pullDistance, isRefreshing ? 40 : 0) / 40,
-                    1.5,
-                  )
-                : 0
-            })`,
+            height: pullDistance > 0 || isRefreshing ? 40 : 0,
             opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
-            willChange:
-              pullDistance > 0 || isRefreshing ? 'transform' : undefined,
           }}
           aria-hidden="true"
         >
@@ -304,35 +284,62 @@ export function GroceryTab({
           ) : null}
         </div>
 
+        <LargeTitle
+          titleRef={titleRef}
+          title="Shop"
+          subtitle={subtitle}
+          onOpenSettings={onOpenSettings}
+        />
+
+        {shopMode && (
+          <div className="mx-gutter mb-3 flex min-h-11 items-center rounded-[var(--radius-md)] bg-sage/10 px-3 dark:bg-sage/15">
+            <p className="text-meta font-semibold text-sage dark:text-sage-light">
+              Shop mode
+            </p>
+          </div>
+        )}
+
+        {reorderMode && (
+          <div className="mx-gutter mb-3 flex min-h-11 items-center justify-between gap-3 rounded-[var(--radius-md)] bg-sage/10 px-3 dark:bg-sage/15">
+            <p className="text-meta text-ink dark:text-ink-dark">
+              Drag items to reorder
+            </p>
+            <button
+              type="button"
+              onClick={exitReorderMode}
+              className="hit-touch shrink-0 rounded-full bg-sage px-3 text-meta font-semibold text-white active:bg-sage-dark"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
         {error && (
-          <p className="mb-2 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
+          <p className="mx-gutter mb-3 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
             Couldn&apos;t load items. Pull down to retry.
           </p>
         )}
         {loading ? (
           <SkeletonList />
         ) : items.length === 0 ? (
-          <div className="relative py-12">
-            <Icon
-              name="list"
-              size="lg"
-              className="absolute right-0 top-0 opacity-[0.06] dark:opacity-[0.08]"
-            />
-            <p className="text-large-title font-semibold text-ink dark:text-ink-dark">
-              Your list is empty
+          <div className="px-gutter py-8">
+            <p className="text-body text-ink dark:text-ink-dark">
+              Nothing to shop yet
             </p>
-            <p className="mt-2 text-body text-warm-gray dark:text-warm-gray-light">
-              Type below to add something
+            <p className="mt-1 text-footnote text-warm-gray dark:text-warm-gray-light">
+              Add an item in the bar below
             </p>
           </div>
         ) : shopMode ? (
-          <ShopFlatList
-            items={shopItems}
-            currentUserName={session.displayName}
-            onToggle={toggleItem}
-            onDelete={deleteItem}
-            onEdit={setEditingItem}
-          />
+          <div className="mx-gutter overflow-hidden rounded-[var(--radius-md)] bg-cream dark:bg-surface-raised">
+            <ShopFlatList
+              items={shopItems}
+              currentUserName={session.displayName}
+              onToggle={toggleItem}
+              onDelete={deleteItem}
+              onEdit={setEditingItem}
+            />
+          </div>
         ) : (
           <DndContext
             sensors={sensors}
@@ -356,7 +363,7 @@ export function GroceryTab({
         )}
 
         {!loading && items.length > 0 && (
-          <div className="mt-4 space-y-3 border-t border-separator pt-3 pb-2">
+          <div className="mt-2 space-y-3 px-gutter pb-2">
             {buyAgainChips.length > 0 && !showDone && (
               <div>
                 <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-warm-gray">
@@ -370,7 +377,7 @@ export function GroceryTab({
                       onClick={() =>
                         handleBuyAgain(chip.text, chip.category as CategoryId)
                       }
-                      className="press-scale rounded-full border border-line bg-cream px-2.5 py-1.5 text-meta font-medium text-ink active:bg-cream-dark dark:bg-surface-raised dark:text-ink-dark dark:active:bg-surface"
+                      className="press-scale min-h-11 rounded-full border border-line bg-cream px-3 text-meta font-medium text-ink active:bg-cream-dark dark:bg-surface-raised dark:text-ink-dark dark:active:bg-surface"
                     >
                       {chip.text}
                     </button>

@@ -17,6 +17,6 @@ export interface ListTabContentProps {
   showDone: boolean
   onShowDoneChange: (show: boolean) => void
   onRemoteInsert: (item: GroceryItem) => void
-  mainRef?: React.RefObject<HTMLElement | null>
-  scrollRestored?: boolean
+  active: boolean
+  onOpenSettings: () => void
 }

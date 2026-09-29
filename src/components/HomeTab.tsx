@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useRef, useState, useMemo, useCallback } from 'react'
 import type { Session, GroceryItem, HomeCategoryId } from '../types'
 import {
   getHomeCategoryEmoji,
@@ -15,15 +15,16 @@ import { CategorySection } from './CategorySection'
 import { HomeAddItemBar } from './HomeAddItemBar'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
-import { Icon } from './Icon'
+import { CompactTitleBar, LargeTitle } from './ScreenHeader'
+import { listCountLabel, useCompactTitle } from '../hooks/useCompactTitle'
 
 interface HomeTabProps {
   session: Session
   showDone: boolean
   onShowDoneChange: (show: boolean) => void
   onRemoteInsert: (item: GroceryItem) => void
-  mainRef: React.RefObject<HTMLElement | null>
-  onScroll?: () => void
+  active: boolean
+  onOpenSettings: () => void
 }
 
 export function HomeTab({
@@ -31,9 +32,11 @@ export function HomeTab({
   showDone,
   onShowDoneChange,
   onRemoteInsert,
-  mainRef,
-  onScroll,
+  active,
+  onOpenSettings,
 }: HomeTabProps) {
+  const mainRef = useRef<HTMLElement | null>(null)
+  const titleRef = useRef<HTMLDivElement | null>(null)
   const {
     items,
     loading,
@@ -43,7 +46,8 @@ export function HomeTab({
     updateItem,
     deleteItem,
     refetch,
-  } = useItems(session, { section: 'home', onRemoteInsert })
+  } = useItems(session, { section: 'home', onRemoteInsert, active })
+  const compactTitle = useCompactTitle(mainRef, titleRef)
   const { visibleCategories } = useCategoryConfig(session.listId, 'home')
 
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
@@ -67,7 +71,9 @@ export function HomeTab({
     return map
   }, [items, visibleCategories])
 
+  const uncheckedCount = items.filter((i) => !i.checked).length
   const checkedCount = items.filter((i) => i.checked).length
+  const subtitle = listCountLabel(uncheckedCount, 'todo', 'All caught up', loading)
 
   const visibleSections = (visibleCategories as ResolvedHomeCategory[]).filter(
     (cat) => {
@@ -118,27 +124,22 @@ export function HomeTab({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <CompactTitleBar
+        title="Home"
+        visible={compactTitle}
+        onOpenSettings={onOpenSettings}
+      />
       <main
         ref={mainRef}
-        className="relative flex-1 overflow-y-auto px-gutter pt-1 pb-2"
-        onScroll={onScroll}
+        className="relative flex-1 overflow-y-auto pb-2"
         {...handlers}
       >
         <div
-          className="pointer-events-none flex h-10 origin-top items-center justify-center overflow-hidden text-meta text-sage transition-[transform,opacity] duration-150 dark:text-sage-light"
+          className="pointer-events-none flex items-center justify-center overflow-hidden text-meta text-sage dark:text-sage-light"
           style={{
-            transform: `scaleY(${
-              pullDistance > 0 || isRefreshing
-                ? Math.min(
-                    Math.max(pullDistance, isRefreshing ? 40 : 0) / 40,
-                    1.5,
-                  )
-                : 0
-            })`,
+            height: pullDistance > 0 || isRefreshing ? 40 : 0,
             opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
-            willChange:
-              pullDistance > 0 || isRefreshing ? 'transform' : undefined,
           }}
           aria-hidden="true"
         >
@@ -151,32 +152,32 @@ export function HomeTab({
           ) : null}
         </div>
 
+        <LargeTitle
+          titleRef={titleRef}
+          title="Home"
+          subtitle={subtitle}
+          onOpenSettings={onOpenSettings}
+        />
+
         {error && (
-          <p className="mb-2 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
+          <p className="mx-gutter mb-3 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
             Couldn&apos;t load items. Pull down to retry.
           </p>
         )}
         {loading ? (
           <SkeletonList />
         ) : items.length === 0 ? (
-          <div className="relative py-12">
-            <Icon
-              name="checklist"
-              size="lg"
-              className="absolute right-0 top-0 opacity-[0.06] dark:opacity-[0.08]"
-            />
-            <p className="text-large-title font-semibold text-ink dark:text-ink-dark">
-              All clear
-            </p>
-            <p className="mt-2 text-body text-warm-gray dark:text-warm-gray-light">
-              Add household tasks below
+          <div className="px-gutter py-8">
+            <p className="text-body text-ink dark:text-ink-dark">Nothing to do</p>
+            <p className="mt-1 text-footnote text-warm-gray dark:text-warm-gray-light">
+              Add a task in the bar below
             </p>
           </div>
         ) : (
           <>
             {visibleSections.map((cat) => renderCategory(cat))}
             {checkedCount > 0 && (
-              <div className="mt-4 flex items-center gap-3 border-t border-separator pt-3 pb-2">
+              <div className="mt-2 flex items-center gap-3 px-gutter pb-2">
                 <button
                   type="button"
                   onClick={() => onShowDoneChange(!showDone)}

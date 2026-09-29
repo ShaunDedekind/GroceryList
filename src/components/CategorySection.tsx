@@ -46,20 +46,18 @@ export function CategorySection({
   const count = unchecked > 0 ? unchecked : items.length
 
   return (
-    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-1">
-      <h2 className="px-1 py-1 text-meta font-semibold uppercase tracking-wide text-warm-gray dark:text-warm-gray-light">
-        <span className="mr-1" aria-hidden="true">
-          {categoryEmoji}
-        </span>
-        {categoryLabel}
-        <span className="font-medium text-warm-gray-light"> · {count}</span>
+    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-6">
+      <h2 className="mb-1.5 flex items-baseline gap-1.5 px-gutter text-meta font-semibold text-warm-gray dark:text-warm-gray-light">
+        <span aria-hidden="true">{categoryEmoji}</span>
+        <span>{categoryLabel}</span>
+        <span>{count}</span>
       </h2>
 
       <div
         ref={setNodeRef}
-        className={`${isOver ? 'ring-1 ring-sage/30 rounded-[var(--radius-sm)]' : ''} ${
-          showDropZone ? 'min-h-10' : ''
-        }`}
+        className={`mx-gutter overflow-hidden rounded-[var(--radius-md)] bg-cream dark:bg-surface-raised ${
+          isOver ? 'ring-2 ring-sage/30' : ''
+        } ${showDropZone ? 'min-h-12' : ''}`}
       >
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
           <AnimatePresence mode="popLayout">

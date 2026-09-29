@@ -37,7 +37,7 @@ function DragHandle(props: HTMLAttributes<HTMLButtonElement>) {
     <button
       type="button"
       {...props}
-      className={`flex h-9 w-7 shrink-0 touch-none items-center justify-center rounded-[var(--radius-sm)] text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface ${props.className ?? ''}`}
+      className={`hit-touch touch-none text-warm-gray-light active:bg-cream-dark/80 dark:active:bg-surface ${props.className ?? ''}`}
       aria-label="Reorder item"
     >
       <Icon name="reorder" size="sm" />
@@ -144,98 +144,100 @@ export function ItemRow({
           onPointerDown={startLongPress}
           onPointerUp={cancelLongPress}
           onPointerLeave={cancelLongPress}
-          className={`relative flex min-h-row items-center gap-1.5 pr-1 ${
-            reorderMode ? 'pl-0.5' : 'pl-[var(--spacing-row-x)]'
-          } ${showSeparator ? 'border-b border-separator' : ''}`}
+          className="relative flex min-h-row items-stretch"
         >
-          {reorderMode && !isDragOverlay && (
-            <DragHandle {...attributes} {...listeners} />
-          )}
-
-          <motion.button
-            type="button"
-            onClick={handleToggle}
-            whileTap={reducedMotion ? undefined : { scale: 0.9 }}
-            transition={springSnappy}
-            className="hit-touch shrink-0"
-            aria-label={item.checked ? 'Uncheck item' : 'Check item'}
-          >
-            <span
-              className={`item-check flex items-center justify-center ${
-                item.checked ? 'item-check-checked' : ''
-              }`}
-            >
-              <AnimatePresence mode="wait">
-                {item.checked && (
-                  <motion.span
-                    key="check"
-                    initial={reducedMotion ? false : { scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    transition={springSnappy}
-                  >
-                    <Icon name="check" size="sm" />
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </span>
-          </motion.button>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit(item)
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="min-w-0 flex-1 py-1 text-left transition-opacity active:opacity-70"
-          >
-            <span
-              className={`block truncate text-row-title leading-tight ${
-                item.checked
-                  ? 'text-warm-gray-light line-through dark:text-warm-gray'
-                  : 'text-ink dark:text-ink-dark'
-              }`}
-            >
-              {title}
-            </span>
-            {note && (
-              <span className="mt-0.5 block truncate text-meta text-warm-gray-light dark:text-warm-gray">
-                {note}
-              </span>
+          <div className="flex shrink-0 items-center">
+            {reorderMode && !isDragOverlay && (
+              <DragHandle {...attributes} {...listeners} />
             )}
-            {(dueLabel || typeChip) && (
-              <span className="mt-0.5 flex items-center gap-1.5 truncate text-meta text-warm-gray-light">
-                {typeChip && (
-                  <span className="inline-flex items-center gap-0.5 rounded-full bg-cream-dark px-1.5 py-0.5 text-caption font-medium text-ink dark:bg-surface-raised dark:text-ink-dark">
-                    <span aria-hidden="true">{typeChip.emoji}</span>
-                    {typeChip.label}
-                  </span>
-                )}
-                {dueLabel && <span>{dueLabel}</span>}
+
+            <motion.button
+              type="button"
+              onClick={handleToggle}
+              whileTap={reducedMotion ? undefined : { opacity: 0.6 }}
+              transition={springSnappy}
+              className="hit-touch shrink-0"
+              aria-label={item.checked ? 'Uncheck item' : 'Check item'}
+            >
+              <span
+                className={`item-check flex items-center justify-center ${
+                  item.checked ? 'item-check-checked' : ''
+                }`}
+              >
+                <AnimatePresence mode="wait">
+                  {item.checked && (
+                    <motion.span
+                      key="check"
+                      initial={reducedMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={springSnappy}
+                    >
+                      <Icon name="check" size="sm" />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </span>
-            )}
-          </button>
+            </motion.button>
+          </div>
 
-          <UserBadge
-            name={item.added_by}
-            isCurrentUser={item.added_by === currentUserName}
-          />
-
-          {!isTouch && (
+          <div
+            className={`flex min-w-0 flex-1 items-center gap-2 pr-3 ${
+              showSeparator ? 'border-b border-separator' : ''
+            }`}
+          >
             <button
               type="button"
-              onClick={handleDelete}
-              className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[8px] text-warm-gray-light transition-opacity active:bg-error-banner ${
-                showDeleteHint
-                  ? 'opacity-100 text-error'
-                  : 'opacity-0 group-hover:opacity-70 hover:!opacity-100'
-              }`}
-              aria-label="Delete item"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit(item)
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="min-w-0 flex-1 py-1.5 text-left active:opacity-70"
             >
-              <Icon name="close" size="sm" />
+              <span
+                className={`block truncate text-row-title ${
+                  item.checked
+                    ? 'text-warm-gray-light line-through dark:text-warm-gray'
+                    : 'text-ink dark:text-ink-dark'
+                }`}
+              >
+                {title}
+              </span>
+              {(note || dueLabel || typeChip) && (
+                <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-meta text-warm-gray dark:text-warm-gray-light">
+                  {typeChip && (
+                    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-cream-dark px-1.5 py-0.5 font-medium text-ink dark:bg-surface dark:text-ink-dark">
+                      <span aria-hidden="true">{typeChip.emoji}</span>
+                      {typeChip.label}
+                    </span>
+                  )}
+                  {dueLabel && <span className="shrink-0">{dueLabel}</span>}
+                  {note && <span className="min-w-0 truncate">{note}</span>}
+                </span>
+              )}
             </button>
-          )}
+
+            <UserBadge
+              name={item.added_by}
+              isCurrentUser={item.added_by === currentUserName}
+            />
+
+            {!isTouch && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className={`hit-touch text-warm-gray-light transition-opacity active:bg-error-banner ${
+                  showDeleteHint
+                    ? 'opacity-100 text-error'
+                    : 'opacity-0 group-hover:opacity-70 hover:!opacity-100'
+                }`}
+                aria-label="Delete item"
+              >
+                <Icon name="close" size="sm" />
+              </button>
+            )}
+          </div>
         </motion.div>
       </div>
 
