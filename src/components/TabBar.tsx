@@ -30,10 +30,10 @@ export function TabBar({
 
   return (
     <nav
-      className="safe-bottom sticky bottom-0 z-20 px-3 pb-1.5 pt-0.5"
+      className="safe-bottom sticky bottom-0 z-20 px-3 pt-1"
       aria-label="List sections"
     >
-      <div className="flex gap-0.5 rounded-full border border-line bg-surface-strong p-0.5 shadow-card backdrop-blur-xl dark:bg-surface-strong">
+      <div className="flex rounded-full border border-line bg-surface-strong p-1 shadow-card backdrop-blur-xl">
         {tabs.map((tab) => {
           const selected = activeTab === tab.id
           return (
@@ -43,25 +43,19 @@ export function TabBar({
               role="tab"
               aria-selected={selected}
               onClick={() => onTabChange(tab.id)}
-              className={`press-scale relative flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full px-1.5 text-meta font-semibold transition-colors ${
-                selected
-                  ? 'bg-sage text-white'
-                  : 'text-ink active:bg-cream-dark dark:text-ink-dark dark:active:bg-surface-raised'
+              className={`relative flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1 active:opacity-70 ${
+                selected ? 'text-sage' : 'text-warm-gray dark:text-warm-gray-light'
               }`}
             >
-              <span className="relative flex items-center">
-                <Icon name={selected ? tab.iconFilled : tab.icon} size="sm" />
+              <span className="relative flex h-6 w-6 items-center justify-center">
+                <Icon name={selected ? tab.iconFilled : tab.icon} size="lg" />
                 {tab.count > 0 && (
-                  <span
-                    className={`absolute -right-2.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-caption font-bold leading-none ${
-                      selected ? 'bg-sunshine text-ink' : 'bg-blush text-ink'
-                    }`}
-                  >
+                  <span className="absolute -right-2.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blush px-1 text-caption font-semibold leading-none text-ink">
                     {tab.count > 99 ? '99+' : tab.count}
                   </span>
                 )}
               </span>
-              <span>{tab.label}</span>
+              <span className="text-caption font-medium">{tab.label}</span>
             </button>
           )
         })}
