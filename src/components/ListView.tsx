@@ -162,8 +162,8 @@ export function ListView({
               {session.displayName}
             </p>
           </div>
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush text-ink dark:bg-surface-raised dark:text-ink-dark">
-            <Icon name="settings" size="md" />
+          <span className="hit-touch shrink-0 text-warm-gray dark:text-warm-gray-light">
+            <Icon name="settings" size="sm" />
           </span>
         </button>
       </header>

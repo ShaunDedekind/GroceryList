@@ -17,7 +17,7 @@ export function ShopFlatList({
   onEdit,
 }: ShopFlatListProps) {
   return (
-    <div className="surface-card tint-sky overflow-hidden">
+    <div className="overflow-hidden">
       {items.map((item, index) => (
         <ItemRow
           key={item.id}
@@ -26,7 +26,6 @@ export function ShopFlatList({
           onToggle={onToggle}
           onDelete={onDelete}
           onEdit={onEdit}
-          shopMode
           showSeparator={index < items.length - 1}
         />
       ))}

@@ -113,18 +113,6 @@ export function HomeTab({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {checkedCount > 0 && (
-        <div className="flex items-center gap-3 px-4 pb-2">
-          <button
-            type="button"
-            onClick={() => onShowDoneChange(!showDone)}
-            className="text-meta font-medium text-sage active:text-sage-dark"
-          >
-            {showDone ? 'Hide done' : `Show done (${checkedCount})`}
-          </button>
-        </div>
-      )}
-
       <main
         ref={mainRef}
         className="relative flex-1 overflow-y-auto px-gutter pt-1 pb-2"
@@ -179,7 +167,20 @@ export function HomeTab({
             </p>
           </div>
         ) : (
-          visibleSections.map((cat) => renderCategory(cat))
+          <>
+            {visibleSections.map((cat) => renderCategory(cat))}
+            {checkedCount > 0 && (
+              <div className="mt-4 flex items-center gap-3 border-t border-separator pt-3 pb-2">
+                <button
+                  type="button"
+                  onClick={() => onShowDoneChange(!showDone)}
+                  className="min-h-11 text-meta font-medium text-sage active:text-sage-dark"
+                >
+                  {showDone ? 'Hide done' : `Show done (${checkedCount})`}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
 

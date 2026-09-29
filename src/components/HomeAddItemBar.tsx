@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
 import type { HomeCategoryId } from '../types'
 import {
   DEFAULT_HOME_CATEGORY,
@@ -7,7 +6,6 @@ import {
 } from '../constants/homeCategories'
 import type { ResolvedHomeCategory } from '../lib/homeCategoryConfig'
 import { hapticLight } from '../lib/haptics'
-import { springSnappy } from '../lib/motion'
 import { guessHomeCategory } from '../lib/homeCategoryGuess'
 import { saveHomeOverride } from '../lib/homeCategoryOverrides'
 import { parseItemText } from '../lib/parseItemText'
@@ -41,7 +39,7 @@ export function HomeAddItemBar({
   const [categoryIsManual, setCategoryIsManual] = useState(false)
   const [showHints, setShowHints] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const reducedMotion = useReducedMotion()
+  const barRef = useRef<HTMLDivElement>(null)
 
   const defaultCategory =
     categories.find((entry) => entry.id === DEFAULT_HOME_CATEGORY)?.id ??
@@ -76,6 +74,7 @@ export function HomeAddItemBar({
     setAdding(true)
     setError(null)
     setShowHints(false)
+    setShowCategories(false)
     try {
       const { text: parsedText } = parseItemText(text)
       if (!parsedText) return
@@ -89,7 +88,7 @@ export function HomeAddItemBar({
       refreshRecent()
       hapticLight()
       setJustAdded(true)
-      setTimeout(() => setJustAdded(false), 400)
+      setTimeout(() => setJustAdded(false), 450)
       inputRef.current?.focus()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to add item')
@@ -117,6 +116,7 @@ export function HomeAddItemBar({
       const { text: parsedText } = parseItemText(text)
       if (parsedText) saveHomeOverride(listId, parsedText, homeId)
     }
+    inputRef.current?.focus()
   }
 
   const handleRecentSelect = (item: RecentHomeItem) => {
@@ -129,23 +129,28 @@ export function HomeAddItemBar({
   }
 
   useEffect(() => {
-    if (showCategories) return
-    const handleClick = () => setShowCategories(false)
+    if (!showCategories) return
+    const handleClick = (event: MouseEvent) => {
+      if (barRef.current?.contains(event.target as Node)) return
+      setShowCategories(false)
+    }
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
   }, [showCategories])
 
   return (
-    <div className="relative z-30 border-t border-line bg-surface-strong px-gutter py-1.5 backdrop-blur-xl dark:bg-surface-strong">
+    <div
+      ref={barRef}
+      className="relative z-30 border-t border-line bg-surface-strong px-gutter py-1.5 backdrop-blur-xl dark:bg-surface-strong"
+    >
       {showCategories && (
-        <div onClick={(e) => e.stopPropagation()}>
-          <CategoryPicker
-            categories={categories}
-            selected={category}
-            onSelect={handleCategoryPick}
-            className="mb-2"
-          />
-        </div>
+        <CategoryPicker
+          categories={categories}
+          selected={category}
+          onSelect={handleCategoryPick}
+          layout="strip"
+          className="mb-1.5"
+        />
       )}
 
       {error && (
@@ -155,40 +160,51 @@ export function HomeAddItemBar({
       )}
 
       <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowCategories(!showCategories)
-          }}
-          className={`press-scale flex h-11 shrink-0 items-center gap-1 rounded-full px-3 text-meta font-medium ${
-            isSuggested
-              ? 'bg-sage/15 text-sage-dark ring-2 ring-sage/30 dark:text-sage-light'
-              : 'surface-soft text-warm-gray dark:text-warm-gray-light'
-          }`}
-        >
-          <span>{selected.emoji}</span>
-          <Icon name="chevronDown" size="sm" />
-        </button>
-
         <div className="relative min-w-0 flex-1">
-          <input
-            ref={inputRef}
-            type="text"
-            value={text}
-            onChange={(e) => handleTextChange(e.target.value)}
-            onFocus={() => setShowHints(text.trim().length >= 2)}
-            onBlur={() => setTimeout(() => setShowHints(false), 150)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                handleSubmit()
-              }
-            }}
-            placeholder="Fix, buy, or remember at home…"
-            enterKeyHint="done"
-            className="h-11 w-full rounded-full border border-line bg-cream px-4 text-input outline-none focus:border-sage/40 focus:ring-2 focus:ring-sage/20 dark:bg-surface-raised dark:text-ink-dark"
-          />
+          <div
+            className={`flex h-11 items-center gap-1.5 rounded-full border bg-cream pl-1.5 pr-3 transition-[border-color,box-shadow] dark:bg-surface-raised ${
+              justAdded
+                ? 'border-sage shadow-[0_0_0_3px_rgba(0,98,65,0.15)]'
+                : 'border-line focus-within:border-sage/40 focus-within:ring-2 focus-within:ring-sage/20'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowCategories(!showCategories)
+              }}
+              className={`press-scale flex h-8 shrink-0 items-center gap-0.5 rounded-full px-2 text-meta font-medium ${
+                isSuggested
+                  ? 'bg-sage/15 text-sage-dark dark:text-sage-light'
+                  : 'text-warm-gray dark:text-warm-gray-light'
+              }`}
+              aria-label={`Category ${selected.label}`}
+              aria-expanded={showCategories}
+            >
+              <span>{selected.emoji}</span>
+              <Icon name="chevronDown" size="sm" />
+            </button>
+
+            <input
+              ref={inputRef}
+              type="text"
+              value={text}
+              onChange={(e) => handleTextChange(e.target.value)}
+              onFocus={() => setShowHints(text.trim().length >= 2)}
+              onBlur={() => setTimeout(() => setShowHints(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleSubmit()
+                }
+              }}
+              placeholder="Fix, buy, or remember at home…"
+              enterKeyHint="done"
+              disabled={adding}
+              className="min-w-0 flex-1 bg-transparent text-input outline-none dark:text-ink-dark"
+            />
+          </div>
 
           {showHints && recentHints.length > 0 && (
             <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-[var(--radius-md)] border border-separator bg-cream shadow-lg dark:bg-surface-raised">
@@ -207,22 +223,6 @@ export function HomeAddItemBar({
             </div>
           )}
         </div>
-
-        <motion.button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!text.trim() || adding}
-          animate={
-            reducedMotion || !justAdded
-              ? { scale: 1 }
-              : { scale: [1, 1.15, 1] }
-          }
-          transition={springSnappy}
-          className="press-scale btn-accent flex h-11 w-11 shrink-0 items-center justify-center rounded-full disabled:opacity-40"
-          aria-label="Add item"
-        >
-          <Icon name="add" size="md" />
-        </motion.button>
       </div>
     </div>
   )

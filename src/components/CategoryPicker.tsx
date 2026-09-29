@@ -8,6 +8,7 @@ interface CategoryPickerProps {
   selected: string
   onSelect: (id: string) => void
   className?: string
+  layout?: 'grid' | 'strip'
 }
 
 export function CategoryPicker({
@@ -15,10 +16,15 @@ export function CategoryPicker({
   selected,
   onSelect,
   className = '',
+  layout = 'grid',
 }: CategoryPickerProps) {
   const [expanded, setExpanded] = useState(false)
 
   const { visible, extraCount } = useMemo(() => {
+    if (layout === 'strip') {
+      return { visible: categories, extraCount: 0 }
+    }
+
     const primary = categories.slice(0, PRIMARY_COUNT)
     const selectedInPrimary = primary.some((category) => category.id === selected)
 
@@ -44,7 +50,31 @@ export function CategoryPicker({
         : primary,
       extraCount: categories.length - PRIMARY_COUNT,
     }
-  }, [categories, expanded, selected])
+  }, [categories, expanded, selected, layout])
+
+  if (layout === 'strip') {
+    return (
+      <div className={`-mx-1 overflow-x-auto px-1 pb-0.5 ${className}`}>
+        <div className="flex w-max gap-1.5">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => onSelect(category.id)}
+              className={`press-scale flex h-9 shrink-0 items-center gap-1 rounded-full px-2.5 text-meta font-medium transition-colors ${
+                selected === category.id
+                  ? 'bg-sage/15 text-sage-dark dark:text-sage-light'
+                  : 'bg-cream-dark/70 text-warm-gray active:bg-cream-dark dark:bg-surface dark:text-warm-gray-light'
+              }`}
+            >
+              <span>{category.emoji}</span>
+              <span>{category.label.split(' ')[0]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={className}>

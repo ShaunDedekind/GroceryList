@@ -19,7 +19,9 @@ import { saveOverride } from '../lib/categoryOverrides'
 import type { ResolvedCategory } from '../lib/categoryConfig'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { computeReorderPatch, sortItemsInCategory, sortShopItems } from '../lib/itemOrder'
+import { getBuyAgainChips } from '../lib/buyAgain'
 import { getShopMode, setShopMode } from '../lib/shopMode'
+import { hapticLight } from '../lib/haptics'
 import { CategorySection } from './CategorySection'
 import { AddItemBar } from './AddItemBar'
 import { ShareSheet } from './ShareSheet'
@@ -114,6 +116,20 @@ export function GroceryTab({
     [items, categoryIds],
   )
 
+  const buyAgainChips = useMemo(() => getBuyAgainChips(items), [items])
+
+  const handleBuyAgain = useCallback(
+    async (text: string, category: CategoryId) => {
+      try {
+        await addItem(text, category)
+        hapticLight()
+      } catch (err) {
+        console.error('Failed to re-add item:', err)
+      }
+    },
+    [addItem],
+  )
+
   useEffect(() => {
     if (loading) return
 
@@ -201,7 +217,7 @@ export function GroceryTab({
         }
       }
     },
-    [items, categoryIds, reorderItems, reorderMode],
+    [items, categoryIds, reorderItems, reorderMode, setDragging],
   )
 
   const renderCategory = (cat: ResolvedCategory, forceVisible = false) => {
@@ -250,27 +266,6 @@ export function GroceryTab({
           >
             Done
           </button>
-        </div>
-      )}
-
-      {checkedCount > 0 && (
-        <div className="flex items-center gap-3 px-4 pb-2">
-          <button
-            type="button"
-            onClick={() => onShowDoneChange(!showDone)}
-            className="text-meta font-medium text-sage active:text-sage-dark"
-          >
-            {showDone ? 'Hide done' : `Show done (${checkedCount})`}
-          </button>
-          {showDone && (
-            <button
-              type="button"
-              onClick={clearChecked}
-              className="text-meta text-warm-gray-light active:text-red-500"
-            >
-              Clear done
-            </button>
-          )}
         </div>
       )}
 
@@ -355,6 +350,53 @@ export function GroceryTab({
               ) : null}
             </DragOverlay>
           </DndContext>
+        )}
+
+        {!loading && items.length > 0 && (
+          <div className="mt-4 space-y-3 border-t border-separator pt-3 pb-2">
+            {buyAgainChips.length > 0 && !showDone && (
+              <div>
+                <p className="mb-1.5 text-meta font-semibold uppercase tracking-wide text-warm-gray">
+                  Buy again
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {buyAgainChips.map((chip) => (
+                    <button
+                      key={`${chip.text}-${chip.category}`}
+                      type="button"
+                      onClick={() =>
+                        handleBuyAgain(chip.text, chip.category as CategoryId)
+                      }
+                      className="press-scale rounded-full border border-line bg-cream px-2.5 py-1.5 text-meta font-medium text-ink active:bg-cream-dark dark:bg-surface-raised dark:text-ink-dark dark:active:bg-surface"
+                    >
+                      {chip.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {checkedCount > 0 && (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => onShowDoneChange(!showDone)}
+                  className="min-h-11 text-meta font-medium text-sage active:text-sage-dark"
+                >
+                  {showDone ? 'Hide done' : `Show done (${checkedCount})`}
+                </button>
+                {showDone && (
+                  <button
+                    type="button"
+                    onClick={clearChecked}
+                    className="min-h-11 text-meta text-warm-gray-light active:text-red-500"
+                  >
+                    Clear done
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </main>
 

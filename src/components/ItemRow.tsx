@@ -10,6 +10,7 @@ import {
   animate,
 } from 'motion/react'
 import type { GroceryItem } from '../types'
+import { parseItemDisplay } from '../lib/itemNote'
 import { UserBadge } from './UserBadge'
 import { Icon } from './Icon'
 import { hapticLight, hapticMedium } from '../lib/haptics'
@@ -22,9 +23,7 @@ interface ItemRowProps {
   onDelete: (id: string) => void
   onEdit: (item: GroceryItem) => void
   reorderMode?: boolean
-  shopMode?: boolean
   isDragOverlay?: boolean
-  card?: boolean
   showSeparator?: boolean
 }
 
@@ -51,9 +50,7 @@ export function ItemRow({
   onDelete,
   onEdit,
   reorderMode = false,
-  shopMode = false,
   isDragOverlay = false,
-  card = false,
   showSeparator = true,
 }: ItemRowProps) {
   const reducedMotion = useReducedMotion()
@@ -62,6 +59,7 @@ export function ItemRow({
   const [showDeleteHint, setShowDeleteHint] = useState(false)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isTouch = typeof window !== 'undefined' && 'ontouchstart' in window
+  const { title, note } = parseItemDisplay(item.text)
 
   const {
     attributes,
@@ -112,11 +110,11 @@ export function ItemRow({
       ref={setNodeRef}
       style={sortableStyle}
       layout={!reducedMotion && !isDragging ? 'position' : false}
-      initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 4 }}
       animate={{ opacity: isDragging ? 0.35 : 1, y: 0 }}
-      exit={{ opacity: 0, transition: { duration: 0.18 } }}
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
       transition={spring}
-      className={`group relative ${card ? 'surface-card overflow-hidden' : ''}`}
+      className="group relative"
     >
       <div className="relative overflow-hidden">
         <motion.div
@@ -142,11 +140,9 @@ export function ItemRow({
           onPointerDown={startLongPress}
           onPointerUp={cancelLongPress}
           onPointerLeave={cancelLongPress}
-          className={`relative flex min-h-row items-center gap-2.5 py-[var(--spacing-row-y)] pr-1 ${
-            reorderMode ? 'pl-1' : 'pl-[var(--spacing-row-x)]'
-          } ${
-            !card && showSeparator ? 'border-b border-separator' : ''
-          }`}
+          className={`relative flex min-h-row items-center gap-1.5 pr-1 ${
+            reorderMode ? 'pl-0.5' : 'pl-[var(--spacing-row-x)]'
+          } ${showSeparator ? 'border-b border-separator' : ''}`}
         >
           {reorderMode && !isDragOverlay && (
             <DragHandle {...attributes} {...listeners} />
@@ -157,7 +153,7 @@ export function ItemRow({
             onClick={handleToggle}
             whileTap={reducedMotion ? undefined : { scale: 0.9 }}
             transition={springSnappy}
-            className="hit-touch -my-1 shrink-0"
+            className="hit-touch shrink-0"
             aria-label={item.checked ? 'Uncheck item' : 'Check item'}
           >
             <span
@@ -188,15 +184,22 @@ export function ItemRow({
               onEdit(item)
             }}
             onPointerDown={(e) => e.stopPropagation()}
-            className={`min-w-0 flex-1 text-left text-row-title leading-tight transition-opacity active:opacity-70 ${
-              shopMode ? 'line-clamp-2' : 'truncate'
-            } ${
-              item.checked
-                ? 'text-warm-gray-light line-through dark:text-warm-gray'
-                : 'text-ink dark:text-ink-dark'
-            }`}
+            className="min-w-0 flex-1 py-1 text-left transition-opacity active:opacity-70"
           >
-            {item.text}
+            <span
+              className={`block truncate text-row-title leading-tight ${
+                item.checked
+                  ? 'text-warm-gray-light line-through dark:text-warm-gray'
+                  : 'text-ink dark:text-ink-dark'
+              }`}
+            >
+              {title}
+            </span>
+            {note && (
+              <span className="mt-0.5 block truncate text-meta text-warm-gray-light dark:text-warm-gray">
+                {note}
+              </span>
+            )}
           </button>
 
           <UserBadge

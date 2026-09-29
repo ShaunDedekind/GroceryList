@@ -49,8 +49,9 @@
   --spacing-sheet: 20px;
   --spacing-touch: 44px;
   --spacing-hit: 44px;
-  --spacing-row-x: 12px;
-  --spacing-row-y: 8px;
+  --spacing-row-x: 4px;
+  --spacing-row-y: 0px;
+  --spacing-row: 48px;
 
   --shadow-ambient: 0 1px 2px rgba(34, 34, 34, 0.04), 0 16px 40px rgba(34, 34, 34, 0.06);
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24), 0 18px 40px rgba(0, 0, 0, 0.28);
@@ -222,9 +223,9 @@ select {
 }
 
 .item-check {
-  width: 22px;
-  height: 22px;
-  border-radius: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
   border: 1.5px solid color-mix(in srgb, var(--color-warm-gray-light) 60%, transparent);
   background: transparent;
   transition:
@@ -317,7 +318,7 @@ select {
 }
 
 .min-h-row {
-  min-height: var(--spacing-touch);
+  min-height: var(--spacing-row);
 }
 
 .min-w-touch {

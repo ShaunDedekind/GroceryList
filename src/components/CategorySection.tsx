@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -7,16 +6,6 @@ import {
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import type { GroceryItem } from '../types'
 import { ItemRow } from './ItemRow'
-import { Icon } from './Icon'
-import { spring } from '../lib/motion'
-
-const TINTS = ['tint-blush', 'tint-sky', 'tint-sunshine'] as const
-
-function tintForCategory(id: string): (typeof TINTS)[number] {
-  let sum = 0
-  for (let i = 0; i < id.length; i++) sum += id.charCodeAt(i)
-  return TINTS[sum % TINTS.length]
-}
 
 interface CategorySectionProps {
   categoryId: string
@@ -30,7 +19,6 @@ interface CategorySectionProps {
   isDragActive?: boolean
   forceVisible?: boolean
   reorderMode?: boolean
-  defaultOpen?: boolean
 }
 
 export function CategorySection({
@@ -45,9 +33,7 @@ export function CategorySection({
   isDragActive = false,
   forceVisible = false,
   reorderMode = false,
-  defaultOpen = true,
 }: CategorySectionProps) {
-  const [open, setOpen] = useState(defaultOpen)
   const reducedMotion = useReducedMotion()
   const unchecked = items.filter((i) => !i.checked).length
 
@@ -57,73 +43,46 @@ export function CategorySection({
 
   const itemIds = items.map((item) => item.id)
   const showDropZone = isDragActive && items.length === 0
-  const tint = tintForCategory(categoryId)
+  const count = unchecked > 0 ? unchecked : items.length
 
   return (
-    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-3">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="press-scale flex min-h-11 w-full items-center gap-2 px-1 py-1 active:opacity-70"
-      >
-        <span className="shrink-0 text-sm">{categoryEmoji}</span>
-        <span className="min-w-0 flex-1 truncate text-left text-footnote font-semibold text-ink dark:text-ink-dark">
-          {categoryLabel}
+    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-1">
+      <h2 className="sticky top-0 z-[1] bg-cream/95 px-1 py-1 text-meta font-semibold uppercase tracking-wide text-warm-gray backdrop-blur-sm dark:bg-surface/95 dark:text-warm-gray-light">
+        <span className="mr-1" aria-hidden="true">
+          {categoryEmoji}
         </span>
-        <span className="shrink-0 rounded-full bg-cream-dark px-2 py-0.5 text-meta font-semibold text-ink dark:bg-surface-raised dark:text-ink-dark">
-          {unchecked > 0 ? unchecked : items.length}
-        </span>
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={spring}
-          className="shrink-0 text-warm-gray-light"
-        >
-          <Icon name="chevronDown" size="sm" />
-        </motion.span>
-      </button>
+        {categoryLabel}
+        <span className="font-medium text-warm-gray-light"> · {count}</span>
+      </h2>
 
-      <AnimatePresence initial={false}>
-        {(open || showDropZone) && (
-          <motion.div
-            key="content"
-            initial={reducedMotion ? false : { scaleY: 0, opacity: 0 }}
-            animate={{ scaleY: 1, opacity: 1 }}
-            exit={reducedMotion ? undefined : { scaleY: 0, opacity: 0 }}
-            transition={spring}
-            style={{ transformOrigin: 'top' }}
-            className="overflow-hidden"
-          >
-            <div
-              ref={setNodeRef}
-              className={`surface-card overflow-hidden ${tint} ${
-                isOver ? 'ring-1 ring-sage/30' : ''
-              } ${showDropZone ? 'min-h-10' : ''}`}
-            >
-              <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                <AnimatePresence mode="popLayout">
-                  {items.map((item, index) => (
-                    <ItemRow
-                      key={item.id}
-                      item={item}
-                      currentUserName={currentUserName}
-                      onToggle={onToggle}
-                      onDelete={onDelete}
-                      onEdit={onEdit}
-                      reorderMode={reorderMode}
-                      showSeparator={index < items.length - 1}
-                    />
-                  ))}
-                </AnimatePresence>
-              </SortableContext>
-              {showDropZone && (
-                <p className="px-3 py-2 text-center text-footnote text-warm-gray-light">
-                  Drop here
-                </p>
-              )}
-            </div>
-          </motion.div>
+      <div
+        ref={setNodeRef}
+        className={`${isOver ? 'ring-1 ring-sage/30 rounded-[var(--radius-sm)]' : ''} ${
+          showDropZone ? 'min-h-10' : ''
+        }`}
+      >
+        <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+          <AnimatePresence mode="popLayout">
+            {items.map((item, index) => (
+              <ItemRow
+                key={item.id}
+                item={item}
+                currentUserName={currentUserName}
+                onToggle={onToggle}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                reorderMode={reorderMode}
+                showSeparator={index < items.length - 1}
+              />
+            ))}
+          </AnimatePresence>
+        </SortableContext>
+        {showDropZone && (
+          <p className="px-3 py-2 text-center text-footnote text-warm-gray-light">
+            Drop here
+          </p>
         )}
-      </AnimatePresence>
+      </div>
     </motion.section>
   )
 }
