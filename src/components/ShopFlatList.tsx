@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react'
 import type { GroceryItem } from '../types'
 import { ItemRow } from './ItemRow'
 
@@ -18,6 +19,7 @@ export function ShopFlatList({
 }: ShopFlatListProps) {
   return (
     <div className="overflow-hidden">
+      <AnimatePresence initial={false}>
       {items.map((item, index) => (
         <ItemRow
           key={item.id}
@@ -29,6 +31,7 @@ export function ShopFlatList({
           showSeparator={index < items.length - 1}
         />
       ))}
+      </AnimatePresence>
     </div>
   )
 }

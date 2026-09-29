@@ -191,6 +191,27 @@ export function useItems(session: Session, options: UseItemsOptions) {
     return () => clearInterval(pollInterval)
   }, [active, pollItems])
 
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void refetch()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [refetch])
+
+  const skipActiveRefetch = useRef(active)
+  useEffect(() => {
+    if (!active) return
+    if (skipActiveRefetch.current) {
+      skipActiveRefetch.current = false
+      return
+    }
+    const id = window.setTimeout(() => {
+      void refetch()
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [active, refetch])
+
   const setDragging = useCallback((dragging: boolean) => {
     isDraggingRef.current = dragging
   }, [])

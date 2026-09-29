@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { hapticMedium } from '../lib/haptics'
 import { spring } from '../lib/motion'
 import { BrandMark } from './Icon'
 
@@ -17,7 +16,6 @@ export function DoneCelebration({
   const message = variant === 'home' ? 'All caught up.' : 'Done shopping.'
 
   useEffect(() => {
-    hapticMedium()
     const timer = setTimeout(onComplete, reducedMotion ? 800 : 1200)
     return () => clearTimeout(timer)
   }, [onComplete, reducedMotion])
@@ -34,13 +32,13 @@ export function DoneCelebration({
     >
       <motion.div
         className="flex flex-col items-center rounded-[var(--radius-lg)] bg-cream px-8 py-10 shadow-xl dark:bg-surface-raised"
-        initial={reducedMotion ? false : { scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={spring}
       >
         <motion.div
-          initial={reducedMotion ? false : { scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={reducedMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ ...spring, delay: 0.05 }}
         >
           <BrandMark className="h-16 w-16" />

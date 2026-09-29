@@ -1,5 +1,6 @@
 import type { ListSection } from '../types'
 import { Icon } from './Icon'
+import { HapticSwitch } from './HapticSwitch'
 
 interface TabBarProps {
   activeTab: ListSection
@@ -37,17 +38,16 @@ export function TabBar({
         {tabs.map((tab) => {
           const selected = activeTab === tab.id
           return (
-            <button
+            <div
               key={tab.id}
-              type="button"
               role="tab"
               aria-selected={selected}
-              onClick={() => onTabChange(tab.id)}
-              className={`relative flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1 active:opacity-70 ${
+              aria-label={tab.label}
+              className={`relative flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1 ${
                 selected ? 'text-sage' : 'text-warm-gray dark:text-warm-gray-light'
               }`}
             >
-              <span className="relative flex h-6 w-6 items-center justify-center">
+              <span className="relative flex h-6 w-6 items-center justify-center" aria-hidden="true">
                 <Icon name={selected ? tab.iconFilled : tab.icon} size="lg" />
                 {tab.count > 0 && (
                   <span className="absolute -right-2.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blush px-1 text-caption font-semibold leading-none text-ink">
@@ -55,8 +55,17 @@ export function TabBar({
                   </span>
                 )}
               </span>
-              <span className="text-caption font-medium">{tab.label}</span>
-            </button>
+              <span className="text-caption font-medium" aria-hidden="true">
+                {tab.label}
+              </span>
+              <HapticSwitch
+                checked={selected}
+                label={tab.label}
+                onChange={(next) => {
+                  if (next) onTabChange(tab.id)
+                }}
+              />
+            </div>
           )
         })}
       </div>

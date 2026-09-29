@@ -1,4 +1,4 @@
-import { useRef, useState, type HTMLAttributes } from 'react'
+import { useEffect, useRef, useState, type HTMLAttributes } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
@@ -13,6 +13,7 @@ import type { GroceryItem } from '../types'
 import { parseItemDisplay } from '../lib/itemNote'
 import { UserBadge } from './UserBadge'
 import { Icon } from './Icon'
+import { HapticSwitch } from './HapticSwitch'
 import { hapticLight, hapticMedium } from '../lib/haptics'
 import { spring, springSnappy } from '../lib/motion'
 
@@ -29,7 +30,6 @@ interface ItemRowProps {
   typeChip?: { emoji: string; label: string } | null
 }
 
-const DELETE_THRESHOLD = -72
 const LONG_PRESS_MS = 500
 
 function DragHandle(props: HTMLAttributes<HTMLButtonElement>) {
@@ -58,8 +58,10 @@ export function ItemRow({
   typeChip = null,
 }: ItemRowProps) {
   const reducedMotion = useReducedMotion()
+  const rowRef = useRef<HTMLDivElement | null>(null)
+  const [rowWidth, setRowWidth] = useState(360)
   const x = useMotionValue(0)
-  const deleteOpacity = useTransform(x, [-72, -24, 0], [1, 0.4, 0])
+  const revealWidth = useTransform(x, (latest) => Math.max(0, Math.min(-latest, rowWidth)))
   const [showDeleteHint, setShowDeleteHint] = useState(false)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isTouch = typeof window !== 'undefined' && 'ontouchstart' in window
@@ -84,9 +86,19 @@ export function ItemRow({
       }
     : undefined
 
-  const handleToggle = () => {
+  useEffect(() => {
+    const node = rowRef.current
+    if (!node) return
+    const observer = new ResizeObserver(() => {
+      setRowWidth(node.offsetWidth)
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  const handleToggle = (checked: boolean) => {
     hapticLight()
-    onToggle(item.id, !item.checked)
+    onToggle(item.id, checked)
   }
 
   const handleDelete = () => {
@@ -98,7 +110,6 @@ export function ItemRow({
     if (isTouch) return
     longPressTimer.current = setTimeout(() => {
       setShowDeleteHint(true)
-      hapticLight()
     }, LONG_PRESS_MS)
   }
 
@@ -116,29 +127,38 @@ export function ItemRow({
       layout={!reducedMotion && !isDragging ? 'position' : false}
       initial={reducedMotion ? false : { opacity: 0, y: 4 }}
       animate={{ opacity: isDragging ? 0.35 : 1, y: 0 }}
-      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+      exit={
+        reducedMotion
+          ? { opacity: 0, transition: { duration: 0 } }
+          : { height: 0, opacity: 0, transition: { duration: 0.28 } }
+      }
       transition={spring}
-      className="group relative"
+      className="group relative overflow-hidden"
     >
-      <div className="relative overflow-hidden">
+      <div ref={rowRef} className="relative overflow-hidden">
         <motion.div
-          style={{ opacity: deleteOpacity }}
-          className="absolute inset-y-0 right-0 flex w-20 items-center justify-center bg-error text-sm font-semibold text-white"
+          style={{ width: revealWidth }}
+          className="absolute inset-y-0 right-0 flex items-center justify-end overflow-hidden bg-error text-footnote font-semibold text-white"
           aria-hidden="true"
         >
-          Delete
+          <span className="px-4">Delete</span>
         </motion.div>
 
         <motion.div
           drag={isTouch && !isDragging ? 'x' : false}
-          dragConstraints={{ left: -80, right: 0 }}
-          dragElastic={0.08}
+          dragDirectionLock
+          dragConstraints={{ left: -rowWidth, right: 0 }}
+          dragElastic={{ left: 0.05, right: 0 }}
+          dragMomentum={false}
           style={{ x: isTouch ? x : 0 }}
           onDragEnd={(_, info) => {
-            if (info.offset.x < DELETE_THRESHOLD) {
+            const width = rowRef.current?.offsetWidth || rowWidth
+            const pastThreshold = -info.offset.x > width * 0.4
+            const flicked = info.velocity.x < -500
+            if (pastThreshold || flicked) {
               handleDelete()
             } else {
-              animate(x, 0, springSnappy)
+              animate(x, 0, reducedMotion ? { duration: 0 } : springSnappy)
             }
           }}
           onPointerDown={startLongPress}
@@ -151,18 +171,12 @@ export function ItemRow({
               <DragHandle {...attributes} {...listeners} />
             )}
 
-            <motion.button
-              type="button"
-              onClick={handleToggle}
-              whileTap={reducedMotion ? undefined : { opacity: 0.6 }}
-              transition={springSnappy}
-              className="hit-touch shrink-0"
-              aria-label={item.checked ? 'Uncheck item' : 'Check item'}
-            >
+            <div className="hit-touch relative shrink-0">
               <span
                 className={`item-check flex items-center justify-center ${
                   item.checked ? 'item-check-checked' : ''
                 }`}
+                aria-hidden="true"
               >
                 <AnimatePresence mode="wait">
                   {item.checked && (
@@ -178,7 +192,12 @@ export function ItemRow({
                   )}
                 </AnimatePresence>
               </span>
-            </motion.button>
+              <HapticSwitch
+                checked={item.checked}
+                label={item.checked ? 'Uncheck item' : 'Check item'}
+                onChange={handleToggle}
+              />
+            </div>
           </div>
 
           <div

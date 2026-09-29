@@ -9,12 +9,15 @@ import { saveHomeOverride } from '../lib/homeCategoryOverrides'
 import { useItems } from '../hooks/useItems'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
 import type { ResolvedHomeCategory } from '../lib/homeCategoryConfig'
-import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { sortItemsInCategory } from '../lib/itemOrder'
+import { parseItemDisplay } from '../lib/itemNote'
+import { useLingeringChecked } from '../hooks/useLingeringChecked'
+import { useUndoAction } from '../hooks/useUndoAction'
 import { CategorySection } from './CategorySection'
 import { HomeAddItemBar } from './HomeAddItemBar'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
+import { UndoToast } from './UndoToast'
 import { CompactTitleBar, LargeTitle } from './ScreenHeader'
 import { listCountLabel, useCompactTitle } from '../hooks/useCompactTitle'
 
@@ -45,17 +48,13 @@ export function HomeTab({
     toggleItem,
     updateItem,
     deleteItem,
-    refetch,
   } = useItems(session, { section: 'home', onRemoteInsert, active })
   const compactTitle = useCompactTitle(mainRef, titleRef)
+  const { lingeringIds, retain, release } = useLingeringChecked(showDone)
+  const undo = useUndoAction()
   const { visibleCategories } = useCategoryConfig(session.listId, 'home')
 
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
-
-  const { pullDistance, isRefreshing, handlers } = usePullToRefresh(mainRef, {
-    onRefresh: refetch,
-    enabled: !loading,
-  })
 
   const grouped = useMemo(() => {
     const map = new Map<HomeCategoryId, GroceryItem[]>()
@@ -78,9 +77,11 @@ export function HomeTab({
   const visibleSections = (visibleCategories as ResolvedHomeCategory[]).filter(
     (cat) => {
       const catItems = grouped.get(cat.id) ?? []
-      if (catItems.length === 0) return false
-      if (!showDone && catItems.every((i) => i.checked)) return false
-      return true
+      return catItems.some((item) => {
+        if (undo.hiddenIds.has(item.id)) return false
+        if (showDone) return true
+        return !item.checked || lingeringIds.has(item.id)
+      })
     },
   )
 
@@ -101,9 +102,39 @@ export function HomeTab({
     [addItem],
   )
 
+  const handleToggle = useCallback(
+    (id: string, checked: boolean) => {
+      if (checked) {
+        if (!showDone) retain(id)
+      } else {
+        release(id)
+      }
+      return toggleItem(id, checked)
+    },
+    [showDone, retain, release, toggleItem],
+  )
+
+  const requestDelete = useCallback(
+    (id: string) => {
+      const item = items.find((entry) => entry.id === id)
+      if (!item) return
+      const { title } = parseItemDisplay(item.text)
+      undo.schedule({
+        message: `Deleted '${title}'`,
+        itemIds: [id],
+        commit: () => deleteItem(id),
+      })
+    },
+    [items, undo, deleteItem],
+  )
+
   const renderCategory = (cat: ResolvedHomeCategory) => {
     const catItems = grouped.get(cat.id) ?? []
-    const filtered = showDone ? catItems : catItems.filter((i) => !i.checked)
+    const filtered = catItems.filter((item) => {
+      if (undo.hiddenIds.has(item.id)) return false
+      if (showDone) return true
+      return !item.checked || lingeringIds.has(item.id)
+    })
 
     if (filtered.length === 0) return null
 
@@ -115,8 +146,8 @@ export function HomeTab({
         categoryEmoji={cat.emoji}
         items={filtered}
         currentUserName={session.displayName}
-        onToggle={toggleItem}
-        onDelete={deleteItem}
+        onToggle={handleToggle}
+        onDelete={requestDelete}
         onEdit={setEditingItem}
         reorderMode={false}
       />
@@ -133,25 +164,7 @@ export function HomeTab({
       <main
         ref={mainRef}
         className="relative flex-1 overflow-y-auto pb-2"
-        {...handlers}
       >
-        <div
-          className="pointer-events-none flex items-center justify-center overflow-hidden text-meta text-sage dark:text-sage-light"
-          style={{
-            height: pullDistance > 0 || isRefreshing ? 40 : 0,
-            opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
-          }}
-          aria-hidden="true"
-        >
-          {isRefreshing ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-sage/30 border-t-sage" />
-          ) : pullDistance >= 72 ? (
-            'Release to refresh'
-          ) : pullDistance > 0 ? (
-            'Pull to refresh'
-          ) : null}
-        </div>
-
         <LargeTitle
           titleRef={titleRef}
           title="Home"
@@ -161,7 +174,7 @@ export function HomeTab({
 
         {error && (
           <p className="mx-gutter mb-3 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
-            Couldn&apos;t load items. Pull down to retry.
+            Couldn&apos;t sync — retrying
           </p>
         )}
         {loading ? (
@@ -190,6 +203,8 @@ export function HomeTab({
           </>
         )}
       </main>
+
+      {undo.message && <UndoToast message={undo.message} onUndo={undo.undo} />}
 
       <HomeAddItemBar
         listId={session.listId}

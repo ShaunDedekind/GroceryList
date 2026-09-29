@@ -60,7 +60,7 @@ export function CategorySection({
         } ${showDropZone ? 'min-h-12' : ''}`}
       >
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence initial={false}>
             {items.map((item, index) => (
               <ItemRow
                 key={item.id}

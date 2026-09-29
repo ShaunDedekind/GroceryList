@@ -1,4 +1,5 @@
 import { useRef, useState, useMemo, useCallback } from 'react'
+import { AnimatePresence } from 'motion/react'
 import type { Session, GroceryItem, HenryCategoryId } from '../types'
 import {
   getHenryCategoryEmoji,
@@ -8,16 +9,19 @@ import {
 import { useItems } from '../hooks/useItems'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
 import type { ResolvedHenryCategory } from '../lib/henryCategoryConfig'
-import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import {
   formatDueLabel,
   groupHenryItems,
   type HenryBucketId,
 } from '../lib/henryBuckets'
+import { parseItemDisplay } from '../lib/itemNote'
+import { useLingeringChecked } from '../hooks/useLingeringChecked'
+import { useUndoAction } from '../hooks/useUndoAction'
 import { ItemRow } from './ItemRow'
 import { HenryAddItemBar } from './HenryAddItemBar'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
+import { UndoToast } from './UndoToast'
 import { CompactTitleBar, LargeTitle } from './ScreenHeader'
 import { listCountLabel, useCompactTitle } from '../hooks/useCompactTitle'
 
@@ -56,25 +60,60 @@ export function HenryTab({
     toggleItem,
     updateItem,
     deleteItem,
-    refetch,
   } = useItems(session, { section: 'henry', onRemoteInsert, active })
   const compactTitle = useCompactTitle(mainRef, titleRef)
+  const { lingeringIds, retain, release } = useLingeringChecked(showDone)
+  const undo = useUndoAction()
   const { visibleCategories } = useCategoryConfig(session.listId, 'henry')
 
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
 
-  const { pullDistance, isRefreshing, handlers } = usePullToRefresh(mainRef, {
-    onRefresh: refetch,
-    enabled: !loading,
-  })
-
-  const buckets = useMemo(
-    () => groupHenryItems(items, { showDone }),
-    [items, showDone],
-  )
+  const buckets = useMemo(() => {
+    const source = items
+      .filter((item) => !undo.hiddenIds.has(item.id))
+      .map((item) =>
+        lingeringIds.has(item.id) && item.checked
+          ? { ...item, checked: false }
+          : item,
+      )
+    const grouped = groupHenryItems(source, { showDone })
+    const byId = new Map(items.map((item) => [item.id, item]))
+    return grouped.map((bucket) => ({
+      ...bucket,
+      items: bucket.items
+        .map((item) => byId.get(item.id) ?? item)
+        .filter((item) => !undo.hiddenIds.has(item.id)),
+    }))
+  }, [items, showDone, undo.hiddenIds, lingeringIds])
   const uncheckedCount = items.filter((i) => !i.checked).length
   const checkedCount = items.filter((i) => i.checked).length
   const subtitle = listCountLabel(uncheckedCount, 'todo', 'All clear', loading)
+
+  const handleToggle = useCallback(
+    (id: string, checked: boolean) => {
+      if (checked) {
+        if (!showDone) retain(id)
+      } else {
+        release(id)
+      }
+      return toggleItem(id, checked)
+    },
+    [showDone, retain, release, toggleItem],
+  )
+
+  const requestDelete = useCallback(
+    (id: string) => {
+      const item = items.find((entry) => entry.id === id)
+      if (!item) return
+      const { title } = parseItemDisplay(item.text)
+      undo.schedule({
+        message: `Deleted '${title}'`,
+        itemIds: [id],
+        commit: () => deleteItem(id),
+      })
+    },
+    [items, undo, deleteItem],
+  )
 
   const handleAdd = useCallback(
     async (
@@ -123,25 +162,7 @@ export function HenryTab({
       <main
         ref={mainRef}
         className="relative flex-1 overflow-y-auto pb-2"
-        {...handlers}
       >
-        <div
-          className="pointer-events-none flex items-center justify-center overflow-hidden text-meta text-sage dark:text-sage-light"
-          style={{
-            height: pullDistance > 0 || isRefreshing ? 40 : 0,
-            opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
-          }}
-          aria-hidden="true"
-        >
-          {isRefreshing ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-sage/30 border-t-sage" />
-          ) : pullDistance >= 72 ? (
-            'Release to refresh'
-          ) : pullDistance > 0 ? (
-            'Pull to refresh'
-          ) : null}
-        </div>
-
         <LargeTitle
           titleRef={titleRef}
           title="Henry"
@@ -151,7 +172,7 @@ export function HenryTab({
 
         {error && (
           <p className="mx-gutter mb-3 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
-            Couldn&apos;t load tasks. Pull down to retry.
+            Couldn&apos;t sync — retrying
           </p>
         )}
 
@@ -180,19 +201,21 @@ export function HenryTab({
                     <span>{count}</span>
                   </h2>
                   <div className="mx-gutter overflow-hidden rounded-[var(--radius-md)] bg-cream dark:bg-surface-raised">
-                    {bucket.items.map((item, index) => (
-                      <ItemRow
-                        key={item.id}
-                        item={item}
-                        currentUserName={session.displayName}
-                        onToggle={toggleItem}
-                        onDelete={deleteItem}
-                        onEdit={setEditingItem}
-                        showSeparator={index < bucket.items.length - 1}
-                        dueLabel={formatDueLabel(item.due_at)}
-                        typeChip={typeChipFor(item)}
-                      />
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {bucket.items.map((item, index) => (
+                        <ItemRow
+                          key={item.id}
+                          item={item}
+                          currentUserName={session.displayName}
+                          onToggle={handleToggle}
+                          onDelete={requestDelete}
+                          onEdit={setEditingItem}
+                          showSeparator={index < bucket.items.length - 1}
+                          dueLabel={formatDueLabel(item.due_at)}
+                          typeChip={typeChipFor(item)}
+                        />
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </section>
               )
@@ -212,6 +235,8 @@ export function HenryTab({
           </>
         )}
       </main>
+
+      {undo.message && <UndoToast message={undo.message} onUndo={undo.undo} />}
 
       <HenryAddItemBar
         categories={visibleCategories as ResolvedHenryCategory[]}

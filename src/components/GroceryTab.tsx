@@ -17,11 +17,13 @@ import { useItems } from '../hooks/useItems'
 import { getCategoryEmoji, getCategoryLabel } from '../constants/categories'
 import { saveOverride } from '../lib/categoryOverrides'
 import type { ResolvedCategory } from '../lib/categoryConfig'
-import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { computeReorderPatch, sortItemsInCategory, sortShopItems } from '../lib/itemOrder'
 import { getBuyAgainChips } from '../lib/buyAgain'
 import { getShopMode, setShopMode } from '../lib/shopMode'
 import { hapticLight } from '../lib/haptics'
+import { parseItemDisplay } from '../lib/itemNote'
+import { useLingeringChecked } from '../hooks/useLingeringChecked'
+import { useUndoAction } from '../hooks/useUndoAction'
 import { CategorySection } from './CategorySection'
 import { AddItemBar } from './AddItemBar'
 import { ShareSheet } from './ShareSheet'
@@ -31,6 +33,7 @@ import { SkeletonList } from './SkeletonList'
 import { DragOverlayItem } from './DragOverlayItem'
 import { ShopFlatList } from './ShopFlatList'
 import { DoneCelebration } from './DoneCelebration'
+import { UndoToast } from './UndoToast'
 import { CompactTitleBar, LargeTitle } from './ScreenHeader'
 import { listCountLabel, useCompactTitle } from '../hooks/useCompactTitle'
 
@@ -67,14 +70,15 @@ export function GroceryTab({
     updateItem,
     reorderItems,
     deleteItem,
-    clearChecked,
-    refetch,
     setDragging,
   } = useItems(session, { section: 'grocery', onRemoteInsert, active })
 
   const mainRef = useRef<HTMLElement | null>(null)
   const titleRef = useRef<HTMLDivElement | null>(null)
   const compactTitle = useCompactTitle(mainRef, titleRef)
+  const localFinishRef = useRef(false)
+  const { lingeringIds, retain, release } = useLingeringChecked(showDone)
+  const undo = useUndoAction()
 
   const [showShare, setShowShare] = useState(false)
   const [showPaste, setShowPaste] = useState(false)
@@ -83,8 +87,6 @@ export function GroceryTab({
   const [reorderMode, setReorderMode] = useState(false)
   const [shopMode, setShopModeState] = useState(() => getShopMode(session.listId))
   const [showCelebration, setShowCelebration] = useState(false)
-  const prevUncheckedRef = useRef<number | null>(null)
-  const hasLoadedRef = useRef(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -92,11 +94,6 @@ export function GroceryTab({
       activationConstraint: { delay: 150, tolerance: 5 },
     }),
   )
-
-  const { pullDistance, isRefreshing, handlers } = usePullToRefresh(mainRef, {
-    onRefresh: refetch,
-    enabled: !loading,
-  })
 
   const grouped = useMemo(() => {
     const cats = resolved as ResolvedCategory[]
@@ -116,10 +113,19 @@ export function GroceryTab({
   const uncheckedCount = items.filter((i) => !i.checked).length
   const checkedCount = items.filter((i) => i.checked).length
 
-  const shopItems = useMemo(
-    () => sortShopItems(items, categoryIds as CategoryId[]),
-    [items, categoryIds],
-  )
+  const shopItems = useMemo(() => {
+    const visible = items.filter(
+      (item) =>
+        !undo.hiddenIds.has(item.id) &&
+        (!item.checked || lingeringIds.has(item.id)),
+    )
+    const forSort = visible.map((item) =>
+      item.checked ? { ...item, checked: false } : item,
+    )
+    const sorted = sortShopItems(forSort, categoryIds as CategoryId[])
+    const byId = new Map(visible.map((item) => [item.id, item]))
+    return sorted.map((item) => byId.get(item.id) ?? item)
+  }, [items, categoryIds, undo.hiddenIds, lingeringIds])
 
   const buyAgainChips = useMemo(() => getBuyAgainChips(items), [items])
 
@@ -137,25 +143,66 @@ export function GroceryTab({
 
   useEffect(() => {
     if (loading) return
-
-    if (!hasLoadedRef.current) {
-      hasLoadedRef.current = true
-      prevUncheckedRef.current = uncheckedCount
+    if (localFinishRef.current && uncheckedCount === 0) {
+      localFinishRef.current = false
+      setShowCelebration(true)
       return
     }
-
-    const prev = prevUncheckedRef.current
-    if (prev !== null && prev >= 1 && uncheckedCount === 0) {
-      setShowCelebration(true)
-    }
-    prevUncheckedRef.current = uncheckedCount
+    if (uncheckedCount > 0) localFinishRef.current = false
   }, [uncheckedCount, loading])
+
+  const handleToggle = useCallback(
+    (id: string, checked: boolean) => {
+      if (checked) {
+        const remaining = items.filter(
+          (item) => item.id !== id && !item.checked,
+        ).length
+        localFinishRef.current = remaining === 0
+        if (!showDone) retain(id)
+      } else {
+        localFinishRef.current = false
+        release(id)
+      }
+      return toggleItem(id, checked)
+    },
+    [items, showDone, retain, release, toggleItem],
+  )
+
+  const requestDelete = useCallback(
+    (id: string) => {
+      const item = items.find((entry) => entry.id === id)
+      if (!item) return
+      const { title } = parseItemDisplay(item.text)
+      undo.schedule({
+        message: `Deleted '${title}'`,
+        itemIds: [id],
+        commit: () => deleteItem(id),
+      })
+    },
+    [items, undo, deleteItem],
+  )
+
+  const requestClearDone = useCallback(() => {
+    const checked = items.filter((item) => item.checked)
+    if (checked.length === 0) return
+    const ids = checked.map((item) => item.id)
+    undo.schedule({
+      message:
+        ids.length === 1 ? 'Cleared 1 item' : `Cleared ${ids.length} items`,
+      itemIds: ids,
+      commit: async () => {
+        await Promise.all(ids.map((id) => deleteItem(id)))
+      },
+    })
+  }, [items, undo, deleteItem])
 
   const visibleSections = visibleCategories.filter((cat) => {
     const catItems = grouped.get(cat.id as CategoryId) ?? []
-    if (catItems.length === 0) return false
-    if (!showDone && catItems.every((i) => i.checked)) return false
-    return true
+    return catItems.some((item) => {
+      if (undo.hiddenIds.has(item.id)) return false
+      if (showDone) return true
+      return !item.checked || lingeringIds.has(item.id)
+    })
   })
 
   const dragSections = visibleCategories
@@ -230,7 +277,11 @@ export function GroceryTab({
 
   const renderCategory = (cat: ResolvedCategory, forceVisible = false) => {
     const catItems = grouped.get(cat.id) ?? []
-    const filtered = showDone ? catItems : catItems.filter((i) => !i.checked)
+    const filtered = catItems.filter((item) => {
+      if (undo.hiddenIds.has(item.id)) return false
+      if (showDone) return true
+      return !item.checked || lingeringIds.has(item.id)
+    })
 
     if (filtered.length === 0 && !forceVisible) return null
 
@@ -242,8 +293,8 @@ export function GroceryTab({
         categoryEmoji={cat.emoji}
         items={filtered}
         currentUserName={session.displayName}
-        onToggle={toggleItem}
-        onDelete={deleteItem}
+        onToggle={handleToggle}
+        onDelete={requestDelete}
         onEdit={setEditingItem}
         isDragActive={Boolean(activeItem)}
         forceVisible={forceVisible}
@@ -265,25 +316,7 @@ export function GroceryTab({
       <main
         ref={mainRef}
         className="relative flex-1 overflow-y-auto pb-2"
-        {...handlers}
       >
-        <div
-          className="pointer-events-none flex items-center justify-center overflow-hidden text-meta text-sage dark:text-sage-light"
-          style={{
-            height: pullDistance > 0 || isRefreshing ? 40 : 0,
-            opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
-          }}
-          aria-hidden="true"
-        >
-          {isRefreshing ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-sage/30 border-t-sage" />
-          ) : pullDistance >= 72 ? (
-            'Release to refresh'
-          ) : pullDistance > 0 ? (
-            'Pull to refresh'
-          ) : null}
-        </div>
-
         <LargeTitle
           titleRef={titleRef}
           title="Shop"
@@ -316,7 +349,7 @@ export function GroceryTab({
 
         {error && (
           <p className="mx-gutter mb-3 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
-            Couldn&apos;t load items. Pull down to retry.
+            Couldn&apos;t sync — retrying
           </p>
         )}
         {loading ? (
@@ -335,8 +368,8 @@ export function GroceryTab({
             <ShopFlatList
               items={shopItems}
               currentUserName={session.displayName}
-              onToggle={toggleItem}
-              onDelete={deleteItem}
+              onToggle={handleToggle}
+              onDelete={requestDelete}
               onEdit={setEditingItem}
             />
           </div>
@@ -398,7 +431,7 @@ export function GroceryTab({
                 {showDone && (
                   <button
                     type="button"
-                    onClick={clearChecked}
+                    onClick={requestClearDone}
                     className="min-h-11 text-meta text-warm-gray-light active:text-red-500"
                   >
                     Clear done
@@ -409,6 +442,8 @@ export function GroceryTab({
           </div>
         )}
       </main>
+
+      {undo.message && <UndoToast message={undo.message} onUndo={undo.undo} />}
 
       <AddItemBar
         listId={session.listId}
