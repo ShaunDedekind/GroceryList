@@ -25,6 +25,8 @@ interface ItemRowProps {
   reorderMode?: boolean
   isDragOverlay?: boolean
   showSeparator?: boolean
+  dueLabel?: string | null
+  typeChip?: { emoji: string; label: string } | null
 }
 
 const DELETE_THRESHOLD = -72
@@ -52,6 +54,8 @@ export function ItemRow({
   reorderMode = false,
   isDragOverlay = false,
   showSeparator = true,
+  dueLabel = null,
+  typeChip = null,
 }: ItemRowProps) {
   const reducedMotion = useReducedMotion()
   const x = useMotionValue(0)
@@ -198,6 +202,17 @@ export function ItemRow({
             {note && (
               <span className="mt-0.5 block truncate text-meta text-warm-gray-light dark:text-warm-gray">
                 {note}
+              </span>
+            )}
+            {(dueLabel || typeChip) && (
+              <span className="mt-0.5 flex items-center gap-1.5 truncate text-meta text-warm-gray-light">
+                {typeChip && (
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-cream-dark px-1.5 py-0.5 text-[10px] font-medium text-ink dark:bg-surface-raised dark:text-ink-dark">
+                    <span aria-hidden="true">{typeChip.emoji}</span>
+                    {typeChip.label}
+                  </span>
+                )}
+                {dueLabel && <span>{dueLabel}</span>}
               </span>
             )}
           </button>

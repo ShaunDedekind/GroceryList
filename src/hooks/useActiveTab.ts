@@ -4,7 +4,7 @@ import { fetchUncheckedCounts } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
 
 export function useSectionCounts(listId: string) {
-  const [counts, setCounts] = useState({ grocery: 0, home: 0 })
+  const [counts, setCounts] = useState({ grocery: 0, home: 0, henry: 0 })
 
   const refresh = useCallback(async () => {
     try {
@@ -55,6 +55,7 @@ function parseHashTab(): ListSection | null {
   if (typeof window === 'undefined') return null
   const hash = window.location.hash.replace('#', '')
   if (hash === 'home') return 'home'
+  if (hash === 'henry') return 'henry'
   if (hash === 'shop' || hash === 'grocery') return 'grocery'
   return null
 }
@@ -62,11 +63,17 @@ function parseHashTab(): ListSection | null {
 function readStoredTab(listId: string): ListSection {
   try {
     const raw = localStorage.getItem(storageKey(listId))
-    if (raw === 'home' || raw === 'grocery') return raw
+    if (raw === 'home' || raw === 'grocery' || raw === 'henry') return raw
   } catch {
     // ignore
   }
   return 'grocery'
+}
+
+function hashForTab(tab: ListSection): string {
+  if (tab === 'home') return '#home'
+  if (tab === 'henry') return '#henry'
+  return '#shop'
 }
 
 export function useActiveTab(listId: string) {
@@ -78,7 +85,7 @@ export function useActiveTab(listId: string) {
     (tab: ListSection) => {
       setActiveTabState(tab)
       localStorage.setItem(storageKey(listId), tab)
-      const hash = tab === 'home' ? '#home' : '#shop'
+      const hash = hashForTab(tab)
       if (window.location.hash !== hash) {
         window.history.replaceState(null, '', hash)
       }

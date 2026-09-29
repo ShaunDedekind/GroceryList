@@ -9,6 +9,7 @@ import { buildCategoryConfigFromResolved } from '../lib/categoryConfig'
 import type { ResolvedCategory } from '../lib/categoryConfig'
 import { GroceryTab } from './GroceryTab'
 import { HomeTab } from './HomeTab'
+import { HenryTab } from './HenryTab'
 import { TabBar } from './TabBar'
 import { PartnerToast } from './PartnerToast'
 import { AisleSectionsSettings } from './AisleSectionsSettings'
@@ -39,9 +40,11 @@ export function ListView({
 
   const groceryMainRef = useRef<HTMLElement>(null)
   const homeMainRef = useRef<HTMLElement>(null)
+  const henryMainRef = useRef<HTMLElement>(null)
   const scrollPositions = useRef<Record<ListSection, number>>({
     grocery: 0,
     home: 0,
+    henry: 0,
   })
 
   const [partnerToast, setPartnerToast] = useState<{
@@ -52,6 +55,7 @@ export function ListView({
   const [showSettings, setShowSettings] = useState(false)
   const [showDoneGrocery, setShowDoneGrocery] = useState(false)
   const [showDoneHome, setShowDoneHome] = useState(false)
+  const [showDoneHenry, setShowDoneHenry] = useState(false)
   const [editName, setEditName] = useState(session.listName)
   const [editDisplayName, setEditDisplayName] = useState(session.displayName)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
@@ -72,25 +76,34 @@ export function ListView({
     [],
   )
 
-  const saveScrollPosition = useCallback((section: ListSection) => {
-    const ref = section === 'home' ? homeMainRef : groceryMainRef
-    if (ref.current) {
-      scrollPositions.current[section] = ref.current.scrollTop
-    }
+  const mainRefFor = useCallback((section: ListSection) => {
+    if (section === 'home') return homeMainRef
+    if (section === 'henry') return henryMainRef
+    return groceryMainRef
   }, [])
+
+  const saveScrollPosition = useCallback(
+    (section: ListSection) => {
+      const ref = mainRefFor(section)
+      if (ref.current) {
+        scrollPositions.current[section] = ref.current.scrollTop
+      }
+    },
+    [mainRefFor],
+  )
 
   const handleTabChange = useCallback(
     (tab: ListSection) => {
       saveScrollPosition(activeTab)
       setActiveTab(tab)
       requestAnimationFrame(() => {
-        const ref = tab === 'home' ? homeMainRef : groceryMainRef
+        const ref = mainRefFor(tab)
         if (ref.current) {
           ref.current.scrollTop = scrollPositions.current[tab]
         }
       })
     },
-    [activeTab, saveScrollPosition, setActiveTab],
+    [activeTab, saveScrollPosition, setActiveTab, mainRefFor],
   )
 
   const openSettings = () => {
@@ -136,11 +149,16 @@ export function ListView({
       ? counts.home === 0
         ? 'All caught up'
         : `${counts.home} to do`
-      : counts.grocery === 0
-        ? 'All done!'
-        : `${counts.grocery} left`
+      : activeTab === 'henry'
+        ? counts.henry === 0
+          ? 'All clear'
+          : `${counts.henry} to do`
+        : counts.grocery === 0
+          ? 'All done!'
+          : `${counts.grocery} left`
 
-  const tabLabel = activeTab === 'home' ? 'Home' : 'Shop'
+  const tabLabel =
+    activeTab === 'home' ? 'Home' : activeTab === 'henry' ? 'Henry' : 'Shop'
 
   return (
     <div className="flex min-h-vv h-vv flex-col">
@@ -181,7 +199,7 @@ export function ListView({
             visibleCategories={visibleCategories as ResolvedCategory[]}
             categoryIds={categoryIds as CategoryId[]}
           />
-        ) : (
+        ) : activeTab === 'home' ? (
           <HomeTab
             session={session}
             showDone={showDoneHome}
@@ -189,6 +207,15 @@ export function ListView({
             onRemoteInsert={handleRemoteInsert('home')}
             mainRef={homeMainRef}
             onScroll={() => saveScrollPosition('home')}
+          />
+        ) : (
+          <HenryTab
+            session={session}
+            showDone={showDoneHenry}
+            onShowDoneChange={setShowDoneHenry}
+            onRemoteInsert={handleRemoteInsert('henry')}
+            mainRef={henryMainRef}
+            onScroll={() => saveScrollPosition('henry')}
           />
         )}
       </div>
@@ -198,6 +225,7 @@ export function ListView({
         onTabChange={handleTabChange}
         groceryCount={counts.grocery}
         homeCount={counts.home}
+        henryCount={counts.henry}
       />
 
       <AnimatePresence>

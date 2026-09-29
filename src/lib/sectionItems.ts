@@ -5,5 +5,14 @@ export function shouldDeleteOnClearChecked(section: ListSection): boolean {
 }
 
 export function normalizeItemSection(section: unknown): ListSection {
-  return section === 'home' ? 'home' : 'grocery'
+  if (section === 'home') return 'home'
+  if (section === 'henry') return 'henry'
+  return 'grocery'
+}
+
+export function inboundEmailAddress(
+  listCode: string,
+  domain = 'inbound.household.app',
+): string {
+  return `henry+${listCode.toUpperCase()}@${domain}`
 }

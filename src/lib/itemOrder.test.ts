@@ -30,6 +30,8 @@ function item(
     sort_order,
     created_at,
     updated_at: created_at,
+    due_at: null,
+    note: null,
   }
 }
 

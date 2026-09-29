@@ -2,9 +2,14 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { getSession } from './storage'
 import type { CategoryId } from '../types'
 import type { ParsedItem } from './parseItems'
-import type { CategoryConfig, HomeCategoryConfig } from '../types'
+import type {
+  CategoryConfig,
+  HomeCategoryConfig,
+  HenryCategoryConfig,
+} from '../types'
 import { parseCategoryConfig } from './categoryConfig'
 import { parseHomeCategoryConfig } from './homeCategoryConfig'
+import { parseHenryCategoryConfig } from './henryCategoryConfig'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -138,9 +143,34 @@ export async function updateHomeCategoryConfig(
   if (error) throw error
 }
 
+export async function fetchHenryCategoryConfig(
+  listId: string,
+): Promise<HenryCategoryConfig> {
+  const { data, error } = await supabase
+    .from('lists')
+    .select('henry_category_config')
+    .eq('id', listId)
+    .single()
+
+  if (error) throw error
+  return parseHenryCategoryConfig(data?.henry_category_config)
+}
+
+export async function updateHenryCategoryConfig(
+  listId: string,
+  config: HenryCategoryConfig,
+): Promise<void> {
+  const { error } = await supabase
+    .from('lists')
+    .update({ henry_category_config: config })
+    .eq('id', listId)
+
+  if (error) throw error
+}
+
 export async function fetchUncheckedCounts(
   listId: string,
-): Promise<{ grocery: number; home: number }> {
+): Promise<{ grocery: number; home: number; henry: number }> {
   const { data, error } = await supabase
     .from('items')
     .select('section')
@@ -151,11 +181,13 @@ export async function fetchUncheckedCounts(
 
   let grocery = 0
   let home = 0
+  let henry = 0
   for (const row of data ?? []) {
     if (row.section === 'home') home++
+    else if (row.section === 'henry') henry++
     else grocery++
   }
-  return { grocery, home }
+  return { grocery, home, henry }
 }
 
 export async function parseItemsWithAI(text: string): Promise<ParsedItem[]> {

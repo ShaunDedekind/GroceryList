@@ -5,15 +5,39 @@ import { CategoryPicker } from './CategoryPicker'
 import { BottomSheet } from './BottomSheet'
 import type { DisplayCategory } from './listTabTypes'
 
+function toDatetimeLocalValue(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function fromDatetimeLocalValue(value: string): string | null {
+  if (!value.trim()) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toISOString()
+}
+
+export interface ItemEditSavePayload {
+  text: string
+  category: string
+  due_at?: string | null
+  note?: string | null
+}
+
 interface ItemEditSheetProps {
   item: GroceryItem
   listId: string
   categories: DisplayCategory[]
-  onSave: (id: string, text: string, category: string) => Promise<void>
+  onSave: (id: string, payload: ItemEditSavePayload) => Promise<void>
   onClose: () => void
   getCategoryLabel?: (id: string) => string
   getCategoryEmoji?: (id: string) => string
   onSaveOverride?: (listId: string, text: string, category: string) => void
+  showScheduleFields?: boolean
+  categoryLabel?: string
 }
 
 export function ItemEditSheet({
@@ -25,9 +49,13 @@ export function ItemEditSheet({
   getCategoryLabel,
   getCategoryEmoji,
   onSaveOverride,
+  showScheduleFields = false,
+  categoryLabel = 'Category',
 }: ItemEditSheetProps) {
   const [text, setText] = useState(item.text)
   const [category, setCategory] = useState(item.category)
+  const [dueLocal, setDueLocal] = useState(() => toDatetimeLocalValue(item.due_at))
+  const [note, setNote] = useState(item.note ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,7 +79,16 @@ export function ItemEditSheet({
     setSaving(true)
     setError(null)
     try {
-      await onSave(item.id, trimmed, category)
+      await onSave(item.id, {
+        text: trimmed,
+        category,
+        ...(showScheduleFields
+          ? {
+              due_at: fromDatetimeLocalValue(dueLocal),
+              note: note.trim() || null,
+            }
+          : {}),
+      })
       onSaveOverride?.(listId, trimmed, category)
       hapticLight()
       onClose()
@@ -70,7 +107,7 @@ export function ItemEditSheet({
 
       <label className="mt-4 block">
         <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
-          Item name
+          {showScheduleFields ? 'Task' : 'Item name'}
         </span>
         <input
           type="text"
@@ -81,8 +118,36 @@ export function ItemEditSheet({
         />
       </label>
 
+      {showScheduleFields && (
+        <>
+          <label className="mt-4 block">
+            <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
+              Due
+            </span>
+            <input
+              type="datetime-local"
+              value={dueLocal}
+              onChange={(e) => setDueLocal(e.target.value)}
+              className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:text-ink-dark"
+            />
+          </label>
+
+          <label className="mt-4 block">
+            <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
+              Note
+            </span>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:text-ink-dark"
+            />
+          </label>
+        </>
+      )}
+
       <p className="mt-4 text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
-        Category
+        {categoryLabel}
       </p>
       <CategoryPicker
         categories={pickerCategories}

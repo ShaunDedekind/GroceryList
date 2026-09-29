@@ -6,6 +6,7 @@ interface TabBarProps {
   onTabChange: (tab: ListSection) => void
   groceryCount: number
   homeCount: number
+  henryCount: number
 }
 
 export function TabBar({
@@ -13,16 +14,18 @@ export function TabBar({
   onTabChange,
   groceryCount,
   homeCount,
+  henryCount,
 }: TabBarProps) {
   const tabs: {
     id: ListSection
     label: string
-    icon: 'cart' | 'home'
-    iconFilled: 'cartFilled' | 'homeFilled'
+    icon: 'cart' | 'home' | 'henry'
+    iconFilled: 'cartFilled' | 'homeFilled' | 'henryFilled'
     count: number
   }[] = [
     { id: 'grocery', label: 'Shop', icon: 'cart', iconFilled: 'cartFilled', count: groceryCount },
     { id: 'home', label: 'Home', icon: 'home', iconFilled: 'homeFilled', count: homeCount },
+    { id: 'henry', label: 'Henry', icon: 'henry', iconFilled: 'henryFilled', count: henryCount },
   ]
 
   return (
@@ -40,7 +43,7 @@ export function TabBar({
               role="tab"
               aria-selected={selected}
               onClick={() => onTabChange(tab.id)}
-              className={`press-scale relative flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full px-2 text-meta font-semibold transition-colors ${
+              className={`press-scale relative flex min-h-11 flex-1 items-center justify-center gap-1 rounded-full px-1.5 text-meta font-semibold transition-colors ${
                 selected
                   ? 'bg-sage text-white'
                   : 'text-ink active:bg-cream-dark dark:text-ink-dark dark:active:bg-surface-raised'

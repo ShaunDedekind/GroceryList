@@ -35,6 +35,8 @@ function normalizeItem(raw: GroceryItem): GroceryItem {
   return {
     ...raw,
     section: normalizeItemSection(raw.section),
+    due_at: raw.due_at ?? null,
+    note: raw.note ?? null,
   }
 }
 
@@ -189,7 +191,11 @@ export function useItems(session: Session, options: UseItemsOptions) {
   }, [])
 
   const addItem = useCallback(
-    async (text: string, category: ItemCategoryId) => {
+    async (
+      text: string,
+      category: ItemCategoryId,
+      extras?: { due_at?: string | null; note?: string | null },
+    ) => {
       if (!text.trim()) return
 
       const displayName = getSession()?.displayName ?? session.displayName
@@ -204,6 +210,8 @@ export function useItems(session: Session, options: UseItemsOptions) {
           category,
           added_by: displayName,
           sort_order,
+          due_at: extras?.due_at ?? null,
+          note: extras?.note?.trim() || null,
         })
         .select()
         .single()
@@ -212,7 +220,7 @@ export function useItems(session: Session, options: UseItemsOptions) {
 
       if (section === 'home') {
         saveRecentHomeItem(session.listId, text.trim(), category as HomeCategoryId)
-      } else {
+      } else if (section === 'grocery') {
         saveRecentItem(session.listId, text.trim(), category as CategoryId)
       }
       setItems((prev) => sortItems([...prev, normalizeItem(data as GroceryItem)]))
@@ -287,12 +295,26 @@ export function useItems(session: Session, options: UseItemsOptions) {
   const updateItem = useCallback(
     async (
       id: string,
-      updates: { text?: string; category?: ItemCategoryId },
+      updates: {
+        text?: string
+        category?: ItemCategoryId
+        due_at?: string | null
+        note?: string | null
+      },
     ) => {
       const trimmedText = updates.text?.trim()
-      const patch: { text?: string; category?: ItemCategoryId } = {}
+      const patch: {
+        text?: string
+        category?: ItemCategoryId
+        due_at?: string | null
+        note?: string | null
+      } = {}
       if (trimmedText) patch.text = trimmedText
       if (updates.category) patch.category = updates.category
+      if (updates.due_at !== undefined) patch.due_at = updates.due_at
+      if (updates.note !== undefined) {
+        patch.note = updates.note?.trim() || null
+      }
       if (Object.keys(patch).length === 0) return
 
       const previous = items

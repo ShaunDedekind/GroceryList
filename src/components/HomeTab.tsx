@@ -78,8 +78,14 @@ export function HomeTab({
     },
   )
 
-  const handleSaveItem = async (id: string, text: string, category: string) => {
-    await updateItem(id, { text, category: category as HomeCategoryId })
+  const handleSaveItem = async (
+    id: string,
+    payload: { text: string; category: string },
+  ) => {
+    await updateItem(id, {
+      text: payload.text,
+      category: payload.category as HomeCategoryId,
+    })
   }
 
   const handleAdd = useCallback(

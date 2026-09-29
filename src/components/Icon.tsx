@@ -5,6 +5,8 @@ export type IconName =
   | 'cartFilled'
   | 'home'
   | 'homeFilled'
+  | 'henry'
+  | 'henryFilled'
   | 'settings'
   | 'back'
   | 'add'
@@ -18,6 +20,7 @@ export type IconName =
   | 'more'
   | 'list'
   | 'checklist'
+  | 'calendar'
 
 const STROKE = 1.75
 
@@ -67,6 +70,24 @@ const icons: Record<IconName, ReactNode> = {
       fill="currentColor"
       stroke="none"
     />
+  ),
+  henry: (
+    <>
+      <circle cx="12" cy="8" r="3.5" {...strokeProps()} />
+      <path d="M6 20c1.5-3.5 4-5 6-5s4.5 1.5 6 5" {...strokeProps()} />
+    </>
+  ),
+  henryFilled: (
+    <>
+      <circle cx="12" cy="8" r="3.5" fill="currentColor" stroke="none" />
+      <path d="M6 20c1.5-3.5 4-5 6-5s4.5 1.5 6 5" {...strokeProps()} />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" {...strokeProps()} />
+      <path d="M8 3v4M16 3v4M4 10h16" {...strokeProps()} />
+    </>
   ),
   settings: (
     <>

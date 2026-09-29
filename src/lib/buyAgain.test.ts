@@ -20,6 +20,8 @@ function item(
     sort_order: 0,
     created_at: '2024-01-01T00:00:00.000Z',
     updated_at,
+    due_at: null,
+    note: null,
   }
 }
 

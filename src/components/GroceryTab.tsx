@@ -155,8 +155,11 @@ export function GroceryTab({
 
   const dragSections = visibleCategories
 
-  const handleSaveItem = async (id: string, text: string, category: string) => {
-    await updateItem(id, { text, category: category as CategoryId })
+  const handleSaveItem = async (
+    id: string,
+    payload: { text: string; category: string },
+  ) => {
+    await updateItem(id, { text: payload.text, category: payload.category as CategoryId })
   }
 
   const handleDragCancel = useCallback(() => {
