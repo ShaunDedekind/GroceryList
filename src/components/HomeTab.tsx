@@ -14,7 +14,7 @@ import { parseItemDisplay } from '../lib/itemNote'
 import { useLingeringChecked } from '../hooks/useLingeringChecked'
 import { useUndoAction } from '../hooks/useUndoAction'
 import { CategorySection } from './CategorySection'
-import { HomeAddItemBar } from './HomeAddItemBar'
+import { AddBar } from './AddBar'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
 import { UndoToast } from './UndoToast'
@@ -206,10 +206,11 @@ export function HomeTab({
 
       {undo.message && <UndoToast message={undo.message} onUndo={undo.undo} />}
 
-      <HomeAddItemBar
+      <AddBar
+        section="home"
         listId={session.listId}
         categories={visibleCategories as ResolvedHomeCategory[]}
-        onAdd={handleAdd}
+        onAdd={(text, category) => handleAdd(text, category as HomeCategoryId)}
       />
 
       {editingItem && (

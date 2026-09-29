@@ -25,7 +25,7 @@ import { parseItemDisplay } from '../lib/itemNote'
 import { useLingeringChecked } from '../hooks/useLingeringChecked'
 import { useUndoAction } from '../hooks/useUndoAction'
 import { CategorySection } from './CategorySection'
-import { AddItemBar } from './AddItemBar'
+import { AddBar } from './AddBar'
 import { ShareSheet } from './ShareSheet'
 import { PasteSheet } from './PasteSheet'
 import { ItemEditSheet } from './ItemEditSheet'
@@ -445,10 +445,11 @@ export function GroceryTab({
 
       {undo.message && <UndoToast message={undo.message} onUndo={undo.undo} />}
 
-      <AddItemBar
+      <AddBar
+        section="grocery"
         listId={session.listId}
         categories={visibleCategories as ResolvedCategory[]}
-        onAdd={addItem}
+        onAdd={(text, category, extras) => addItem(text, category as CategoryId, extras)}
         onPaste={() => setShowPaste(true)}
         onShare={() => setShowShare(true)}
         onStartReorder={() => setReorderMode(true)}

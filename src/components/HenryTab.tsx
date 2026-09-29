@@ -18,7 +18,7 @@ import { parseItemDisplay } from '../lib/itemNote'
 import { useLingeringChecked } from '../hooks/useLingeringChecked'
 import { useUndoAction } from '../hooks/useUndoAction'
 import { ItemRow } from './ItemRow'
-import { HenryAddItemBar } from './HenryAddItemBar'
+import { AddBar } from './AddBar'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
 import { UndoToast } from './UndoToast'
@@ -238,9 +238,13 @@ export function HenryTab({
 
       {undo.message && <UndoToast message={undo.message} onUndo={undo.undo} />}
 
-      <HenryAddItemBar
+      <AddBar
+        section="henry"
+        listId={session.listId}
         categories={visibleCategories as ResolvedHenryCategory[]}
-        onAdd={handleAdd}
+        onAdd={(text, category, extras) =>
+          handleAdd(text, category as HenryCategoryId, extras)
+        }
       />
 
       {editingItem && (
