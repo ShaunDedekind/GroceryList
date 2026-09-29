@@ -17,7 +17,7 @@ export function ShopFlatList({
   onEdit,
 }: ShopFlatListProps) {
   return (
-    <div className="surface-card overflow-hidden">
+    <div className="surface-card tint-sky overflow-hidden">
       {items.map((item, index) => (
         <ItemRow
           key={item.id}

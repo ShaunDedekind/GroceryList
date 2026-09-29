@@ -192,7 +192,7 @@ export function AddItemBar({
             setShowCategories(!showCategories)
             setMenuOpen(false)
           }}
-          className={`press-scale flex h-9 shrink-0 items-center gap-1 rounded-[var(--radius-md)] px-2 text-meta font-medium ${
+          className={`press-scale flex h-11 shrink-0 items-center gap-1 rounded-full px-3 text-meta font-medium ${
             isSuggested
               ? 'bg-sage/15 text-sage-dark ring-2 ring-sage/30 dark:text-sage-light'
               : 'surface-soft text-warm-gray dark:text-warm-gray-light'
@@ -219,7 +219,7 @@ export function AddItemBar({
             }}
             placeholder="Add item…"
             enterKeyHint="done"
-            className="h-10 w-full rounded-[var(--radius-md)] border border-line surface-soft px-3 text-input outline-none focus:border-sage/40 focus:ring-2 focus:ring-sage/20 dark:text-ink-dark"
+            className="h-11 w-full rounded-full border border-line bg-cream px-4 text-input outline-none focus:border-sage/40 focus:ring-2 focus:ring-sage/20 dark:bg-surface-raised dark:text-ink-dark"
           />
 
           {showHints && recentHints.length > 0 && (
@@ -251,7 +251,7 @@ export function AddItemBar({
           aria-label="More actions"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
-          className={`press-scale flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-warm-gray dark:text-warm-gray-light ${
+          className={`press-scale flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-warm-gray dark:text-warm-gray-light ${
             reorderMode || shopMode
               ? 'bg-sage/15 ring-2 ring-sage/30 text-sage dark:text-sage-light'
               : 'surface-soft'
@@ -284,7 +284,7 @@ export function AddItemBar({
               : { scale: [1, 1.15, 1] }
           }
           transition={springSnappy}
-          className="press-scale btn-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] disabled:opacity-40"
+          className="press-scale btn-accent flex h-11 w-11 shrink-0 items-center justify-center rounded-full disabled:opacity-40"
           aria-label="Add item"
         >
           <Icon name="add" size="md" />

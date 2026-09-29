@@ -38,9 +38,14 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
 
   if (mode === 'home') {
     return (
-      <div className="safe-top flex min-h-vv h-vv flex-col bg-cream px-gutter dark:bg-surface">
+      <div className="safe-top flex min-h-vv h-vv flex-col px-gutter">
         <div className="flex flex-1 flex-col justify-end pb-8">
-          <BrandMark />
+          <div className="relative h-24 w-28">
+            <span className="absolute left-0 top-1 h-14 w-14 rounded-full bg-blush" />
+            <span className="absolute right-1 top-0 h-11 w-11 rounded-full bg-sky" />
+            <span className="absolute bottom-1 left-8 h-10 w-10 rounded-full bg-sunshine" />
+            <BrandMark className="absolute bottom-0 left-0 shadow-card" />
+          </div>
           <h1 className="mt-6 text-large-title font-semibold text-ink dark:text-ink-dark">
             Groceries
           </h1>
@@ -49,18 +54,18 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
           </p>
         </div>
 
-        <div className="safe-bottom space-y-3 pb-6">
+        <div className="safe-bottom space-y-2 pb-6">
           <button
             type="button"
             onClick={() => switchMode('create')}
-            className="press-scale w-full rounded-[var(--radius-lg)] bg-sage py-3 text-footnote font-semibold text-white active:bg-sage-dark"
+            className="press-scale btn-primary w-full text-body"
           >
             New list
           </button>
           <button
             type="button"
             onClick={() => switchMode('join')}
-            className="press-scale w-full py-3 text-footnote font-semibold text-sage active:opacity-70 dark:text-sage-light"
+            className="press-scale min-h-11 w-full rounded-full text-body font-semibold text-sage active:opacity-70 dark:text-sage-light"
           >
             Join with code
           </button>
@@ -72,7 +77,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
   const isCreate = mode === 'create'
 
   return (
-    <div className="flex min-h-vv h-vv flex-col bg-cream dark:bg-surface">
+    <div className="flex min-h-vv h-vv flex-col">
       <header className="safe-top flex items-center gap-2 px-gutter pt-3">
         <button
           type="button"
@@ -154,7 +159,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
           <button
             type="submit"
             disabled={loading || !displayName.trim() || (!isCreate && !code.trim())}
-            className="press-scale w-full rounded-[var(--radius-lg)] bg-sage py-3 text-footnote font-semibold text-white disabled:opacity-50 active:bg-sage-dark"
+            className="press-scale btn-primary w-full text-body disabled:opacity-50"
           >
             {loading ? 'One moment…' : isCreate ? 'Create list' : 'Join list'}
           </button>

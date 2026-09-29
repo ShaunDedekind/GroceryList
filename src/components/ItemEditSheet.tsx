@@ -101,7 +101,7 @@ export function ItemEditSheet({
         type="button"
         onClick={handleSave}
         disabled={!text.trim() || saving}
-        className="press-scale mt-4 w-full rounded-[var(--radius-lg)] bg-sage py-2.5 text-footnote font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
+        className="press-scale btn-primary mt-4 w-full text-footnote disabled:opacity-40"
       >
         Save
       </button>

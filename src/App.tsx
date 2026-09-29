@@ -51,7 +51,7 @@ export default function App() {
 
 function SetupRequired() {
   return (
-    <div className="safe-top safe-bottom flex min-h-vv h-vv flex-col justify-center bg-cream px-gutter dark:bg-surface">
+    <div className="safe-top safe-bottom flex min-h-vv h-vv flex-col justify-center px-gutter">
       <BrandMark />
       <h1 className="mt-6 text-large-title font-semibold text-ink dark:text-ink-dark">
         Almost ready

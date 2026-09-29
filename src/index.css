@@ -1,31 +1,34 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-cream: #f5f3ef;
-  --color-cream-dark: #ebe8e3;
-  --color-sage: #2d6a4f;
-  --color-sage-light: #40916c;
-  --color-sage-dark: #1b4332;
-  --color-celebrate: #2d6a4f;
-  --color-warm-gray: #6b6560;
-  --color-warm-gray-light: #9c9690;
-  --color-surface: #1c1917;
-  --color-surface-raised: #292524;
-  --color-border-dark: #44403c;
-  --color-ink: #1c1917;
-  --color-ink-dark: #e7e5e4;
-  --color-separator: #e7e5e4;
-  --color-separator-dark: #44403c;
-  --color-error: #dc2626;
-  --color-error-bg: #fef2f2;
-  --color-error-bg-dark: #450a0a;
-  --color-overlay: rgba(28, 25, 23, 0.32);
-  --color-line: rgba(36, 44, 73, 0.09);
-  --color-line-dark: rgba(255, 255, 255, 0.085);
-  --color-surface-soft: rgba(49, 60, 99, 0.055);
-  --color-surface-soft-dark: rgba(255, 255, 255, 0.055);
-  --color-surface-strong: rgba(255, 255, 255, 0.96);
-  --color-surface-strong-dark: rgba(24, 31, 55, 0.94);
+  --color-cream: #fdfbf7;
+  --color-cream-dark: #f6f1ea;
+  --color-sage: #006241;
+  --color-sage-light: #1a7a56;
+  --color-sage-dark: #004830;
+  --color-celebrate: #006241;
+  --color-blush: #f7d6c8;
+  --color-sky: #dceefa;
+  --color-sunshine: #fff0b3;
+  --color-warm-gray: #6a6158;
+  --color-warm-gray-light: #9c9288;
+  --color-surface: #1c1916;
+  --color-surface-raised: #2a2520;
+  --color-border-dark: #3f3832;
+  --color-ink: #222222;
+  --color-ink-dark: #f7f3ee;
+  --color-separator: #efe8df;
+  --color-separator-dark: #3f3832;
+  --color-error: #c2410c;
+  --color-error-bg: #fff1eb;
+  --color-error-bg-dark: #3f1d14;
+  --color-overlay: rgba(34, 34, 34, 0.32);
+  --color-line: rgba(34, 34, 34, 0.08);
+  --color-line-dark: rgba(253, 251, 247, 0.1);
+  --color-surface-soft: rgba(34, 34, 34, 0.04);
+  --color-surface-soft-dark: rgba(253, 251, 247, 0.06);
+  --color-surface-strong: rgba(253, 251, 247, 0.86);
+  --color-surface-strong-dark: rgba(28, 25, 22, 0.9);
 
   --text-large-title: 2.125rem;
   --text-title: 1.375rem;
@@ -35,22 +38,24 @@
   --text-footnote: 0.75rem;
   --text-meta: 0.6875rem;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-sheet: 20px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-sheet: 28px;
   --radius-card: 16px;
+  --radius-pill: 9999px;
 
-  --spacing-gutter: 12px;
+  --spacing-gutter: 16px;
   --spacing-sheet: 20px;
-  --spacing-touch: 40px;
+  --spacing-touch: 44px;
   --spacing-hit: 44px;
-  --spacing-row-x: 10px;
+  --spacing-row-x: 12px;
   --spacing-row-y: 8px;
 
-  --shadow-card: 0 15px 34px rgba(0, 0, 0, 0.12);
-  --shadow-card-light: 0 15px 34px rgba(86, 94, 126, 0.1);
-  --ease-premium: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --shadow-ambient: 0 1px 2px rgba(34, 34, 34, 0.04), 0 16px 40px rgba(34, 34, 34, 0.06);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24), 0 18px 40px rgba(0, 0, 0, 0.28);
+  --shadow-card-light: var(--shadow-ambient);
+  --ease-premium: cubic-bezier(0.22, 0.9, 0.28, 1);
 }
 
 html {
@@ -59,10 +64,14 @@ html {
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: var(--text-body);
   line-height: 1.4;
-  background-color: var(--color-cream);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(247, 214, 200, 0.55), transparent 42%),
+    radial-gradient(circle at 100% 0%, rgba(220, 238, 250, 0.75), transparent 38%),
+    radial-gradient(circle at 78% 100%, rgba(255, 240, 179, 0.42), transparent 34%),
+    var(--color-cream);
   color: var(--color-ink);
   overscroll-behavior: none;
 }
@@ -70,8 +79,9 @@ body {
 @media (prefers-color-scheme: dark) {
   body {
     background:
-      radial-gradient(circle at 14% 14%, rgba(45, 106, 79, 0.12), transparent 32%),
-      radial-gradient(circle at 88% 92%, rgba(64, 145, 108, 0.08), transparent 34%),
+      radial-gradient(circle at 0% 0%, rgba(247, 214, 200, 0.08), transparent 36%),
+      radial-gradient(circle at 100% 8%, rgba(220, 238, 250, 0.07), transparent 34%),
+      radial-gradient(circle at 80% 100%, rgba(0, 98, 65, 0.16), transparent 36%),
       var(--color-surface);
     color: var(--color-ink-dark);
   }
@@ -184,11 +194,7 @@ select {
 .surface-card {
   border: 1px solid var(--color-line);
   border-radius: var(--radius-card);
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.72),
-    rgba(255, 255, 255, 0.48)
-  );
+  background: linear-gradient(180deg, #fffcf8 0%, #fff 100%);
   box-shadow: var(--shadow-card-light);
   transition:
     transform 0.22s var(--ease-premium),
@@ -232,10 +238,58 @@ select {
   color: white;
 }
 
-.btn-accent {
-  background: linear-gradient(135deg, var(--color-sage), var(--color-sage-light));
-  box-shadow: 0 10px 25px rgba(45, 106, 79, 0.24);
+.btn-primary {
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  background: var(--color-sage);
   color: white;
+  font-weight: 600;
+  box-shadow: 0 10px 24px rgba(0, 98, 65, 0.22);
+}
+
+.btn-primary:active {
+  background: var(--color-sage-dark);
+}
+
+.btn-accent {
+  background: var(--color-sage);
+  box-shadow: 0 8px 18px rgba(0, 98, 65, 0.22);
+  color: white;
+}
+
+.tint-blush {
+  background: linear-gradient(180deg, #fffdfb 0%, color-mix(in srgb, var(--color-blush) 78%, white) 100%);
+  border-color: color-mix(in srgb, var(--color-blush) 80%, white);
+}
+
+.tint-sky {
+  background: linear-gradient(180deg, #fffeff 0%, color-mix(in srgb, var(--color-sky) 82%, white) 100%);
+  border-color: color-mix(in srgb, var(--color-sky) 90%, white);
+}
+
+.tint-sunshine {
+  background: linear-gradient(180deg, #fffef8 0%, color-mix(in srgb, var(--color-sunshine) 80%, white) 100%);
+  border-color: color-mix(in srgb, var(--color-sunshine) 85%, white);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tint-blush,
+  .tint-sky,
+  .tint-sunshine {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02));
+  }
+
+  .tint-blush {
+    border-color: rgba(247, 214, 200, 0.22);
+  }
+
+  .tint-sky {
+    border-color: rgba(220, 238, 250, 0.2);
+  }
+
+  .tint-sunshine {
+    border-color: rgba(255, 240, 179, 0.2);
+  }
 }
 
 .shadow-card {
@@ -324,7 +378,7 @@ select {
 }
 
 .press-scale {
-  transition: transform 0.15s ease;
+  transition: transform 0.28s var(--ease-premium);
 }
 
 .press-scale:active {

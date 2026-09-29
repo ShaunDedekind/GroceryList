@@ -92,7 +92,7 @@ export function ShareSheet({ code, onClose }: ShareSheetProps) {
         <button
           type="button"
           onClick={handleShare}
-          className="press-scale w-full rounded-[var(--radius-lg)] bg-sage py-2.5 text-footnote font-semibold text-white active:bg-sage-dark"
+          className="press-scale btn-primary w-full text-footnote"
         >
           {copied ? 'Copied!' : 'Share Code'}
         </button>

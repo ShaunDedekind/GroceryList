@@ -10,6 +10,14 @@ import { ItemRow } from './ItemRow'
 import { Icon } from './Icon'
 import { spring } from '../lib/motion'
 
+const TINTS = ['tint-blush', 'tint-sky', 'tint-sunshine'] as const
+
+function tintForCategory(id: string): (typeof TINTS)[number] {
+  let sum = 0
+  for (let i = 0; i < id.length; i++) sum += id.charCodeAt(i)
+  return TINTS[sum % TINTS.length]
+}
+
 interface CategorySectionProps {
   categoryId: string
   categoryLabel: string
@@ -49,19 +57,20 @@ export function CategorySection({
 
   const itemIds = items.map((item) => item.id)
   const showDropZone = isDragActive && items.length === 0
+  const tint = tintForCategory(categoryId)
 
   return (
-    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-1.5">
+    <motion.section layout={!reducedMotion ? 'position' : false} className="mb-3">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="press-scale flex w-full items-center gap-1.5 px-0.5 py-1 active:opacity-70"
+        className="press-scale flex min-h-11 w-full items-center gap-2 px-1 py-1 active:opacity-70"
       >
         <span className="shrink-0 text-sm">{categoryEmoji}</span>
-        <span className="min-w-0 flex-1 truncate text-left text-meta font-semibold uppercase tracking-wide text-warm-gray dark:text-warm-gray-light">
+        <span className="min-w-0 flex-1 truncate text-left text-footnote font-semibold text-ink dark:text-ink-dark">
           {categoryLabel}
         </span>
-        <span className="surface-soft shrink-0 rounded-full px-1 py-0.5 text-meta font-medium text-warm-gray dark:text-warm-gray-light">
+        <span className="shrink-0 rounded-full bg-cream-dark px-2 py-0.5 text-meta font-semibold text-ink dark:bg-surface-raised dark:text-ink-dark">
           {unchecked > 0 ? unchecked : items.length}
         </span>
         <motion.span
@@ -86,7 +95,7 @@ export function CategorySection({
           >
             <div
               ref={setNodeRef}
-              className={`surface-card overflow-hidden ${
+              className={`surface-card overflow-hidden ${tint} ${
                 isOver ? 'ring-1 ring-sage/30' : ''
               } ${showDropZone ? 'min-h-10' : ''}`}
             >

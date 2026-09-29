@@ -143,8 +143,8 @@ export function ListView({
   const tabLabel = activeTab === 'home' ? 'Home' : 'Shop'
 
   return (
-    <div className="flex min-h-vv h-vv flex-col bg-cream dark:bg-surface">
-      <header className="safe-top sticky top-[var(--vv-offset-top,0px)] z-10 border-b border-line bg-surface-strong backdrop-blur-xl dark:bg-surface-strong">
+    <div className="flex min-h-vv h-vv flex-col">
+      <header className="safe-top sticky top-[var(--vv-offset-top,0px)] z-10 bg-surface-strong shadow-[0_10px_30px_rgba(34,34,34,0.04)] backdrop-blur-xl dark:bg-surface-strong">
         <button
           type="button"
           onClick={openSettings}
@@ -162,7 +162,7 @@ export function ListView({
               {session.displayName}
             </p>
           </div>
-          <span className="surface-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-warm-gray dark:text-warm-gray-light">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush text-ink dark:bg-surface-raised dark:text-ink-dark">
             <Icon name="settings" size="md" />
           </span>
         </button>
@@ -250,7 +250,7 @@ export function ListView({
           type="button"
           onClick={handleSaveSettings}
           disabled={!editDisplayName.trim()}
-          className="press-scale mt-4 w-full rounded-[var(--radius-lg)] bg-sage py-2.5 text-footnote font-semibold text-white disabled:opacity-40 active:bg-sage-dark"
+          className="press-scale btn-primary mt-4 w-full text-footnote disabled:opacity-40"
         >
           Save
         </button>

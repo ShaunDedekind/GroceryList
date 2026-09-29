@@ -136,7 +136,7 @@ export function PasteSheet({ listId, onAddItems, onClose }: PasteSheetProps) {
           type="button"
           onClick={handleAddAll}
           disabled={preview.length === 0 || adding}
-          className="press-scale w-full rounded-[var(--radius-lg)] bg-sage py-2.5 text-footnote font-semibold text-white active:bg-sage-dark disabled:opacity-40"
+          className="press-scale btn-primary w-full text-footnote disabled:opacity-40"
         >
           {adding ? 'Adding…' : `Add all${preview.length > 0 ? ` (${preview.length})` : ''}`}
         </button>
