@@ -53,7 +53,7 @@ export function TabBar({
                 <Icon name={selected ? tab.iconFilled : tab.icon} size="sm" />
                 {tab.count > 0 && (
                   <span
-                    className={`absolute -right-2.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-[10px] font-bold leading-none ${
+                    className={`absolute -right-2.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-caption font-bold leading-none ${
                       selected ? 'bg-sunshine text-ink' : 'bg-blush text-ink'
                     }`}
                   >

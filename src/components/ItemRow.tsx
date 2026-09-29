@@ -207,7 +207,7 @@ export function ItemRow({
             {(dueLabel || typeChip) && (
               <span className="mt-0.5 flex items-center gap-1.5 truncate text-meta text-warm-gray-light">
                 {typeChip && (
-                  <span className="inline-flex items-center gap-0.5 rounded-full bg-cream-dark px-1.5 py-0.5 text-[10px] font-medium text-ink dark:bg-surface-raised dark:text-ink-dark">
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-cream-dark px-1.5 py-0.5 text-caption font-medium text-ink dark:bg-surface-raised dark:text-ink-dark">
                     <span aria-hidden="true">{typeChip.emoji}</span>
                     {typeChip.label}
                   </span>

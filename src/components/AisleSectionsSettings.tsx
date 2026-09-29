@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { CategoryId } from '../types'
 import {
   type ResolvedCategory,
@@ -15,14 +15,16 @@ export function AisleSectionsSettings({
   onSave,
 }: AisleSectionsSettingsProps) {
   const [categories, setCategories] = useState(initialCategories)
+  const [syncedCategories, setSyncedCategories] = useState(initialCategories)
   const [editingId, setEditingId] = useState<CategoryId | null>(null)
   const [editLabel, setEditLabel] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  if (initialCategories !== syncedCategories) {
+    setSyncedCategories(initialCategories)
     setCategories(initialCategories)
-  }, [initialCategories])
+  }
 
   const moveCategory = (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction

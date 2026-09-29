@@ -6,17 +6,18 @@ import { supabase } from '../lib/supabase'
 export function useSectionCounts(listId: string) {
   const [counts, setCounts] = useState({ grocery: 0, home: 0, henry: 0 })
 
-  const refresh = useCallback(async () => {
-    try {
-      const next = await fetchUncheckedCounts(listId)
-      setCounts(next)
-    } catch (error) {
-      console.error('Failed to fetch section counts:', error)
-    }
-  }, [listId])
-
   useEffect(() => {
-    refresh()
+    let cancelled = false
+
+    const load = () => {
+      void fetchUncheckedCounts(listId)
+        .then((next) => {
+          if (!cancelled) setCounts(next)
+        })
+        .catch((error) => {
+          console.error('Failed to fetch section counts:', error)
+        })
+    }
 
     const channel = supabase
       .channel(`section-counts:${listId}`)
@@ -29,18 +30,20 @@ export function useSectionCounts(listId: string) {
           filter: `list_id=eq.${listId}`,
         },
         () => {
-          refresh()
+          load()
         },
       )
       .subscribe()
 
-    const poll = window.setInterval(refresh, 5000)
+    const poll = window.setInterval(load, 5000)
+    load()
 
     return () => {
+      cancelled = true
       window.clearInterval(poll)
       supabase.removeChannel(channel)
     }
-  }, [listId, refresh])
+  }, [listId])
 
   return counts
 }
