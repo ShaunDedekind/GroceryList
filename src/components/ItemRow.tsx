@@ -75,11 +75,12 @@ export function ItemRow({
     disabled: !reorderMode || isDragOverlay,
   })
 
-  const sortableStyle = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.35 : 1,
-  }
+  const sortableStyle = transform
+    ? {
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }
+    : undefined
 
   const handleToggle = () => {
     hapticLight()
@@ -113,11 +114,7 @@ export function ItemRow({
       layout={!reducedMotion && !isDragging ? 'position' : false}
       initial={reducedMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: isDragging ? 0.35 : 1, y: 0 }}
-      exit={
-        reducedMotion
-          ? { opacity: 0 }
-          : { opacity: 0, x: -48, transition: { duration: 0.2 } }
-      }
+      exit={{ opacity: 0, transition: { duration: 0.18 } }}
       transition={spring}
       className={`group relative ${card ? 'surface-card overflow-hidden' : ''}`}
     >

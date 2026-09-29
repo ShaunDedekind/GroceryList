@@ -13,6 +13,7 @@ import {
   sortItems,
   type ItemOrderUpdate,
 } from '../lib/itemOrder'
+import { mergeServerItem, mergeServerItems } from '../lib/itemSync'
 import { supabase } from '../lib/supabase'
 import { getSession } from '../lib/storage'
 import { saveRecentHomeItem, saveRecentItem } from '../lib/recentItems'
@@ -37,6 +38,14 @@ function normalizeItem(raw: GroceryItem): GroceryItem {
   }
 }
 
+function sameItemList(current: GroceryItem[], next: GroceryItem[]): boolean {
+  if (current.length !== next.length) return false
+  for (let i = 0; i < current.length; i++) {
+    if (current[i] !== next[i]) return false
+  }
+  return true
+}
+
 export interface UseItemsOptions {
   section: ListSection
   onRemoteInsert?: (item: GroceryItem) => void
@@ -48,6 +57,9 @@ export function useItems(session: Session, options: UseItemsOptions) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isDraggingRef = useRef(false)
+  const pendingChecksRef = useRef(new Map<string, boolean>())
+  const checkGenerationRef = useRef(new Map<string, number>())
+  const syncGenerationRef = useRef(0)
 
   const applyFetchResult = useCallback(
     (data: GroceryItem[] | null, fetchError: Error | null) => {
@@ -59,7 +71,13 @@ export function useItems(session: Session, options: UseItemsOptions) {
 
       if (isDraggingRef.current) return
 
-      setItems(sortItems((data ?? []).map(normalizeItem)))
+      const incoming = (data ?? []).map(normalizeItem)
+      setItems((prev) => {
+        const next = sortItems(
+          mergeServerItems(prev, incoming, pendingChecksRef.current),
+        )
+        return sameItemList(prev, next) ? prev : next
+      })
       setError(null)
     },
     [],
@@ -67,7 +85,9 @@ export function useItems(session: Session, options: UseItemsOptions) {
 
   const pollItems = useCallback(async () => {
     if (isDraggingRef.current) return
+    const generation = syncGenerationRef.current
     const { data, error: fetchError } = await loadItems(session.listId, section)
+    if (generation !== syncGenerationRef.current) return
     applyFetchResult(
       data as GroceryItem[] | null,
       fetchError ? new Error(fetchError.message) : null,
@@ -75,7 +95,9 @@ export function useItems(session: Session, options: UseItemsOptions) {
   }, [session.listId, section, applyFetchResult])
 
   const refetch = useCallback(async () => {
+    const generation = syncGenerationRef.current
     const { data, error: fetchError } = await loadItems(session.listId, section)
+    if (generation !== syncGenerationRef.current) return
     applyFetchResult(
       data as GroceryItem[] | null,
       fetchError ? new Error(fetchError.message) : null,
@@ -86,14 +108,17 @@ export function useItems(session: Session, options: UseItemsOptions) {
     let cancelled = false
 
     async function initialLoad() {
+      const generation = syncGenerationRef.current
       const { data, error: fetchError } = await loadItems(session.listId, section)
 
       if (cancelled) return
 
-      applyFetchResult(
-        data as GroceryItem[] | null,
-        fetchError ? new Error(fetchError.message) : null,
-      )
+      if (generation === syncGenerationRef.current) {
+        applyFetchResult(
+          data as GroceryItem[] | null,
+          fetchError ? new Error(fetchError.message) : null,
+        )
+      }
       setLoading(false)
     }
 
@@ -128,13 +153,12 @@ export function useItems(session: Session, options: UseItemsOptions) {
               setItems((prev) => prev.filter((item) => item.id !== updated.id))
               return
             }
-            setItems((prev) =>
-              sortItems(
-                prev.map((item) =>
-                  item.id === updated.id ? updated : item,
-                ),
-              ),
-            )
+            setItems((prev) => {
+              const next = sortItems(
+                mergeServerItem(prev, updated, pendingChecksRef.current),
+              )
+              return sameItemList(prev, next) ? prev : next
+            })
           } else if (payload.eventType === 'DELETE') {
             setItems((prev) =>
               prev.filter((item) => item.id !== payload.old.id),
@@ -210,38 +234,53 @@ export function useItems(session: Session, options: UseItemsOptions) {
   )
 
   const toggleItem = useCallback(async (id: string, checked: boolean) => {
+    const generation = (checkGenerationRef.current.get(id) ?? 0) + 1
+    checkGenerationRef.current.set(id, generation)
+    pendingChecksRef.current.set(id, checked)
+    syncGenerationRef.current += 1
+
     setItems((prev) =>
       sortItems(
         prev.map((item) => (item.id === id ? { ...item, checked } : item)),
       ),
     )
 
-    const { data, error: updateError } = await supabase
-      .from('items')
-      .update({ checked })
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const { data, error: updateError } = await supabase
+        .from('items')
+        .update({ checked })
+        .eq('id', id)
+        .select()
+        .single()
 
-    if (updateError) {
-      setItems((prev) =>
-        sortItems(
-          prev.map((item) =>
-            item.id === id ? { ...item, checked: !checked } : item,
-          ),
-        ),
-      )
-      throw updateError
-    }
+      if (checkGenerationRef.current.get(id) !== generation) return
 
-    if (data) {
-      setItems((prev) =>
-        sortItems(
-          prev.map((item) =>
-            item.id === id ? normalizeItem(data as GroceryItem) : item,
+      if (updateError) {
+        pendingChecksRef.current.delete(id)
+        setItems((prev) =>
+          sortItems(
+            prev.map((item) =>
+              item.id === id ? { ...item, checked: !checked } : item,
+            ),
           ),
-        ),
-      )
+        )
+        throw updateError
+      }
+
+      if (data) {
+        const saved = normalizeItem(data as GroceryItem)
+        setItems((prev) => {
+          if (checkGenerationRef.current.get(id) !== generation) return prev
+          pendingChecksRef.current.delete(id)
+          return sortItems(
+            prev.map((item) => (item.id === id ? saved : item)),
+          )
+        })
+      } else {
+        pendingChecksRef.current.delete(id)
+      }
+    } finally {
+      syncGenerationRef.current += 1
     }
   }, [])
 
