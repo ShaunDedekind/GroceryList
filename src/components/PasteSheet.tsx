@@ -126,7 +126,7 @@ export function PasteSheet({ listId, onAddItems, onClose }: PasteSheetProps) {
             type="button"
             onClick={handleSmartParse}
             disabled={!text.trim() || parsing}
-            className="press-scale w-full rounded-[var(--radius-lg)] border border-sage/40 py-2.5 text-footnote font-medium text-sage active:bg-sage/10 disabled:opacity-40 dark:text-sage-light"
+            className="press-scale min-h-11 w-full rounded-[var(--radius-lg)] border border-sage/40 text-footnote font-medium text-sage active:bg-sage/10 disabled:opacity-40 dark:text-sage-light"
           >
             {parsing ? 'Parsing…' : 'Smart parse'}
           </button>

@@ -99,7 +99,7 @@ export function ShareSheet({ code, onClose }: ShareSheetProps) {
         <button
           type="button"
           onClick={handleCopy}
-          className="press-scale w-full rounded-[var(--radius-lg)] border border-separator py-2.5 text-footnote font-medium text-warm-gray active:bg-cream-dark dark:text-warm-gray-light"
+          className="press-scale min-h-11 w-full rounded-[var(--radius-lg)] border border-separator text-footnote font-medium text-warm-gray active:bg-cream-dark dark:text-warm-gray-light"
         >
           Copy to Clipboard
         </button>

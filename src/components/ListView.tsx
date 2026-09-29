@@ -172,60 +172,62 @@ export function ListView({
 
       {showSettings && (
       <BottomSheet onClose={() => setShowSettings(false)} maxHeightClass="max-h-vv-92">
-        <h3 className="text-title font-semibold text-ink dark:text-ink-dark">
+        <h3 className="text-headline font-semibold text-ink dark:text-ink-dark">
           Settings
         </h3>
 
-        <label className="mt-4 block">
-          <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
-            List name
-          </span>
-          <input
-            type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:text-ink-dark"
+        <div className="mt-4 overflow-hidden rounded-[var(--radius-md)] bg-cream-dark dark:bg-surface">
+          <label className="flex min-h-row items-center gap-3 px-4">
+            <span className="shrink-0 text-body text-ink dark:text-ink-dark">
+              List name
+            </span>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="min-w-0 flex-1 bg-transparent text-right text-body text-warm-gray outline-none dark:text-warm-gray-light"
+            />
+          </label>
+          <div className="ml-4 border-b border-separator" />
+          <label className="flex min-h-row items-center gap-3 px-4">
+            <span className="shrink-0 text-body text-ink dark:text-ink-dark">
+              Your name
+            </span>
+            <input
+              type="text"
+              value={editDisplayName}
+              onChange={(e) => setEditDisplayName(e.target.value)}
+              className="min-w-0 flex-1 bg-transparent text-right text-body text-warm-gray outline-none dark:text-warm-gray-light"
+            />
+          </label>
+          <div className="ml-4 border-b border-separator" />
+          <AisleSectionsSettings
+            categories={groceryResolved}
+            onSave={handleSaveAisleSections}
           />
-        </label>
-
-        <label className="mt-4 block">
-          <span className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
-            Your name
-          </span>
-          <input
-            type="text"
-            value={editDisplayName}
-            onChange={(e) => setEditDisplayName(e.target.value)}
-            className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage dark:border-border-dark dark:text-ink-dark"
-          />
-        </label>
-
-        <AisleSectionsSettings
-          categories={groceryResolved}
-          onSave={handleSaveAisleSections}
-        />
-
-        <button
-          type="button"
-          onClick={handleSaveSettings}
-          disabled={!editDisplayName.trim()}
-          className="press-scale btn-primary mt-4 w-full text-footnote disabled:opacity-40"
-        >
-          Save
-        </button>
-
-        <button
-          type="button"
-          onClick={handleCheckForUpdate}
-          className="mt-2 w-full rounded-[var(--radius-lg)] py-2.5 text-footnote font-medium text-sage active:bg-sage/10 dark:active:bg-sage/20"
-        >
-          Check for updates
-        </button>
-        {updateMessage && (
-          <p className="mt-1.5 text-center text-footnote text-warm-gray dark:text-warm-gray-light">
-            {updateMessage}
-          </p>
-        )}
+          <div className="ml-4 border-b border-separator" />
+          <button
+            type="button"
+            onClick={handleSaveSettings}
+            disabled={!editDisplayName.trim()}
+            className="flex min-h-11 w-full items-center px-4 text-left text-body font-semibold text-sage disabled:opacity-40"
+          >
+            Save
+          </button>
+          <div className="ml-4 border-b border-separator" />
+          <button
+            type="button"
+            onClick={handleCheckForUpdate}
+            className="flex min-h-11 w-full items-center px-4 text-left text-body text-ink active:opacity-70 dark:text-ink-dark"
+          >
+            Check for updates
+          </button>
+          {updateMessage && (
+            <p className="px-4 pb-3 text-footnote text-warm-gray dark:text-warm-gray-light">
+              {updateMessage}
+            </p>
+          )}
+        </div>
 
         <button
           type="button"
@@ -233,7 +235,7 @@ export function ListView({
             setShowSettings(false)
             onLeave()
           }}
-          className="mt-2 w-full rounded-[var(--radius-lg)] py-2.5 text-footnote font-medium text-error active:bg-error-banner"
+          className="mt-6 flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] bg-cream-dark text-body font-semibold text-error active:opacity-70 dark:bg-surface"
         >
           Leave List
         </button>

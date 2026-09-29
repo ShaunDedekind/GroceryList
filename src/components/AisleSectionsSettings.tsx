@@ -81,22 +81,20 @@ export function AisleSectionsSettings({
   }
 
   return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-footnote font-medium text-warm-gray dark:text-warm-gray-light">
-          Aisle sections
-        </p>
+    <div>
+      <div className="flex min-h-11 items-center justify-between gap-2 border-b border-separator px-4">
+        <p className="text-body text-ink dark:text-ink-dark">Aisle sections</p>
         <button
           type="button"
           onClick={() => void handleSave()}
           disabled={saving}
-          className="rounded-[var(--radius-md)] px-2.5 py-1 text-footnote font-semibold text-sage active:bg-sage/10 disabled:opacity-40 dark:active:bg-sage/20"
+          className="hit-touch text-body font-semibold text-sage active:opacity-70 disabled:opacity-40"
         >
-          {saving ? 'Saving…' : 'Save sections'}
+          {saving ? 'Saving…' : 'Save'}
         </button>
       </div>
 
-      <ul className="mt-2 max-h-56 overflow-hidden rounded-[var(--radius-lg)] bg-grouped dark:bg-surface">
+      <ul className="max-h-56 overflow-y-auto">
         {categories.map((category, index) => (
           <li
             key={category.id}
@@ -104,13 +102,13 @@ export function AisleSectionsSettings({
               index < categories.length - 1 ? 'border-b border-separator' : ''
             }`}
           >
-            <div className="flex shrink-0 flex-col">
+            <div className="flex shrink-0">
               <button
                 type="button"
                 onClick={() => moveCategory(index, -1)}
                 disabled={index === 0}
                 aria-label={`Move ${category.label} up`}
-                className="flex h-5 w-8 items-center justify-center disabled:opacity-30 active:text-sage"
+                className="hit-touch text-warm-gray disabled:opacity-30 active:text-sage"
               >
                 <Icon name="chevronDown" size="sm" className="rotate-180" />
               </button>
@@ -119,7 +117,7 @@ export function AisleSectionsSettings({
                 onClick={() => moveCategory(index, 1)}
                 disabled={index === categories.length - 1}
                 aria-label={`Move ${category.label} down`}
-                className="flex h-5 w-8 items-center justify-center disabled:opacity-30 active:text-sage"
+                className="hit-touch text-warm-gray disabled:opacity-30 active:text-sage"
               >
                 <Icon name="chevronDown" size="sm" />
               </button>
@@ -134,8 +132,11 @@ export function AisleSectionsSettings({
                 onChange={(e) => setEditLabel(e.target.value)}
                 onBlur={commitRename}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitRename()
-                  if (e.key === 'Escape') setEditingId(null)
+                if (e.key === 'Enter') commitRename()
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  setEditingId(null)
+                }
                 }}
                 autoFocus
                 className="min-w-0 flex-1 rounded-[var(--radius-sm)] border border-separator bg-cream px-2 py-1 text-input outline-none focus:border-sage dark:bg-surface-raised dark:text-ink-dark"
@@ -172,7 +173,7 @@ export function AisleSectionsSettings({
         </p>
       )}
 
-      <p className="mt-2 text-footnote text-warm-gray-light">
+      <p className="px-4 py-2 text-footnote text-warm-gray dark:text-warm-gray-light">
         Tap a name to rename. Hidden sections stay saved but won&apos;t appear in your list.
       </p>
     </div>

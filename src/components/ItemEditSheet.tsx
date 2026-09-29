@@ -174,7 +174,7 @@ export function ItemEditSheet({
       <button
         type="button"
         onClick={onClose}
-        className="mt-2 w-full rounded-[var(--radius-lg)] py-2.5 text-footnote font-medium text-warm-gray active:bg-cream-dark dark:text-warm-gray-light dark:active:bg-surface"
+        className="mt-2 min-h-11 w-full rounded-[var(--radius-lg)] text-footnote font-medium text-warm-gray active:bg-cream-dark dark:text-warm-gray-light dark:active:bg-surface"
       >
         Cancel
       </button>
