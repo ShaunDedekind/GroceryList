@@ -176,7 +176,7 @@ export function Icon({ name, size = 'md', className = '', ...props }: IconProps)
 export function BrandMark({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`flex h-14 w-14 items-center justify-center rounded-[var(--radius-lg)] bg-sage text-white ${className}`}
+      className={`flex h-14 w-14 items-center justify-center rounded-[var(--radius-lg)] bg-sage text-cream ${className}`}
       aria-hidden="true"
     >
       <Icon name="cartFilled" size="lg" />

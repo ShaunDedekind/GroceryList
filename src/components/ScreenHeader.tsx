@@ -19,7 +19,7 @@ export function LargeTitle({
     <div ref={titleRef} className="safe-top px-gutter pb-3">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 py-1">
-          <h1 className="text-large-title font-semibold text-ink dark:text-ink-dark">
+          <h1 className="text-large-title text-ink dark:text-ink-dark">
             {title}
           </h1>
           <p className="mt-0.5 truncate text-footnote text-warm-gray dark:text-warm-gray-light">

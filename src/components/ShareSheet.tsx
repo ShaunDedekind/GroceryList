@@ -60,7 +60,7 @@ export function ShareSheet({ code, onClose }: ShareSheetProps) {
 
   return (
     <BottomSheet onClose={onClose}>
-      <h3 className="text-title font-semibold text-ink dark:text-ink-dark">
+      <h3 className="text-title text-ink dark:text-ink-dark">
         Share your list
       </h3>
       <p className="mt-1.5 text-footnote text-warm-gray dark:text-warm-gray-light">

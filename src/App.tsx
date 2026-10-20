@@ -53,7 +53,7 @@ function SetupRequired() {
   return (
     <div className="safe-top safe-bottom flex min-h-vv h-vv flex-col justify-center px-gutter">
       <BrandMark />
-      <h1 className="mt-6 text-large-title font-semibold text-ink dark:text-ink-dark">
+      <h1 className="mt-6 text-large-title text-ink dark:text-ink-dark">
         Almost ready
       </h1>
       <p className="mt-2 max-w-sm text-body text-warm-gray dark:text-warm-gray-light">
