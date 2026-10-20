@@ -118,6 +118,24 @@ export async function updateCategoryConfig(
   if (error) throw error
 }
 
+/** Reassign every grocery item in a removed aisle to a fallback category. */
+export async function reassignGroceryCategory(
+  listId: string,
+  fromCategory: CategoryId,
+  toCategory: CategoryId = 'other',
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('items')
+    .update({ category: toCategory })
+    .eq('list_id', listId)
+    .eq('section', 'grocery')
+    .eq('category', fromCategory)
+    .select('id')
+
+  if (error) throw error
+  return data?.length ?? 0
+}
+
 export async function fetchHomeCategoryConfig(
   listId: string,
 ): Promise<HomeCategoryConfig> {

@@ -13,11 +13,22 @@ import { BottomSheet } from './BottomSheet'
 
 interface PasteSheetProps {
   listId: string
+  categories?: ReadonlyArray<{
+    id: string
+    label: string
+    emoji?: string
+    keywords?: string[]
+  }>
   onAddItems: (items: { text: string; category: CategoryId }[]) => Promise<number>
   onClose: () => void
 }
 
-export function PasteSheet({ listId, onAddItems, onClose }: PasteSheetProps) {
+export function PasteSheet({
+  listId,
+  categories,
+  onAddItems,
+  onClose,
+}: PasteSheetProps) {
   const [text, setText] = useState('')
   const [preview, setPreview] = useState<ParsedItem[]>([])
   const [adding, setAdding] = useState(false)
@@ -27,12 +38,12 @@ export function PasteSheet({ listId, onAddItems, onClose }: PasteSheetProps) {
 
   const runLocalParse = useCallback(
     (value: string) => {
-      const items = parseLocally(value, listId)
+      const items = parseLocally(value, { listId, categories })
       setPreview(items)
       setUsedAi(false)
       return items
     },
-    [listId],
+    [listId, categories],
   )
 
   useEffect(() => {
@@ -112,7 +123,10 @@ export function PasteSheet({ listId, onAddItems, onClose }: PasteSheetProps) {
                 key={`${item.text}-${item.category}-${i}`}
                 className="flex items-center gap-2 rounded-[var(--radius-md)] bg-cream-dark/50 px-2.5 py-1.5 text-body dark:bg-surface"
               >
-                <span>{getCategoryEmoji(item.category)}</span>
+                <span>
+                  {categories?.find((entry) => entry.id === item.category)
+                    ?.emoji ?? getCategoryEmoji(item.category)}
+                </span>
                 <span className="truncate text-ink dark:text-ink-dark">{item.text}</span>
               </li>
             ))}

@@ -48,3 +48,35 @@ export function saveOverride(
   const trimmed = Object.fromEntries(entries.slice(0, MAX_OVERRIDES))
   saveOverrides(listId, trimmed)
 }
+
+export function remapOverridesAwayFromCategory(
+  listId: string,
+  categoryId: CategoryId,
+  fallback: CategoryId = 'other',
+): void {
+  const overrides = loadOverrides(listId)
+  let changed = false
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value === categoryId) {
+      overrides[key] = fallback
+      changed = true
+    }
+  }
+  if (changed) saveOverrides(listId, overrides)
+}
+
+export function pruneOverridesToKnown(
+  listId: string,
+  knownIds: ReadonlySet<string>,
+  fallback: CategoryId = 'other',
+): void {
+  const overrides = loadOverrides(listId)
+  let changed = false
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!knownIds.has(value)) {
+      overrides[key] = fallback
+      changed = true
+    }
+  }
+  if (changed) saveOverrides(listId, overrides)
+}

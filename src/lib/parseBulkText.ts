@@ -1,11 +1,20 @@
 import type { CategoryId } from '../types'
-import { guessCategoryOrDefault } from './categoryGuess'
+import {
+  extraKeywordsFromResolved,
+  guessCategoryOrDefault,
+  type GuessOptions,
+} from './categoryGuess'
 import { normalizeIngredientName } from './parseItemText'
 
 export interface ParsedItem {
   text: string
   category: CategoryId
   source: 'local' | 'ai'
+}
+
+export interface ParseBulkOptions {
+  listId: string
+  categories?: ReadonlyArray<{ id: string; keywords?: string[] }>
 }
 
 const SECTION_HEADER =
@@ -78,7 +87,7 @@ function addParsedItem(
   items: ParsedItem[],
   seen: Set<string>,
   text: string,
-  listId: string,
+  guessOptions: GuessOptions,
 ): void {
   const normalized = normalizeIngredientName(text)
   if (!normalized) return
@@ -89,12 +98,30 @@ function addParsedItem(
 
   items.push({
     text: normalized,
-    category: guessCategoryOrDefault(normalized, listId),
+    category: guessCategoryOrDefault(normalized, guessOptions),
     source: 'local',
   })
 }
 
-export function parseBulkText(input: string, listId: string): ParsedItem[] {
+export function parseBulkText(
+  input: string,
+  listIdOrOptions: string | ParseBulkOptions,
+): ParsedItem[] {
+  const options =
+    typeof listIdOrOptions === 'string'
+      ? { listId: listIdOrOptions }
+      : listIdOrOptions
+
+  const guessOptions: GuessOptions = {
+    listId: options.listId,
+    extraKeywords: options.categories
+      ? extraKeywordsFromResolved(options.categories)
+      : undefined,
+    knownIds: options.categories
+      ? new Set(options.categories.map((category) => category.id))
+      : undefined,
+  }
+
   const segments = splitSegments(input)
   const seen = new Set<string>()
   const items: ParsedItem[] = []
@@ -103,7 +130,7 @@ export function parseBulkText(input: string, listId: string): ParsedItem[] {
   for (const segment of segments) {
     const parts = recipeMode ? splitConjunctive(segment) : [segment]
     for (const part of parts) {
-      addParsedItem(items, seen, part, listId)
+      addParsedItem(items, seen, part, guessOptions)
     }
   }
 

@@ -1,10 +1,18 @@
-import { parseBulkText, normalizeParsedItems, type ParsedItem } from './parseBulkText'
+import {
+  parseBulkText,
+  normalizeParsedItems,
+  type ParseBulkOptions,
+  type ParsedItem,
+} from './parseBulkText'
 
 const PROSE_CUES =
   /\b(preheat|instructions?|directions?|method|serves|servings|minutes?\s+(?:until|or)|degrees?\s+f|°f|°c)\b/i
 
-export function parseLocally(text: string, listId: string): ParsedItem[] {
-  return parseBulkText(text, listId)
+export function parseLocally(
+  text: string,
+  listIdOrOptions: string | ParseBulkOptions,
+): ParsedItem[] {
+  return parseBulkText(text, listIdOrOptions)
 }
 
 export function needsSmartParse(

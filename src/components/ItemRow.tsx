@@ -166,42 +166,14 @@ export function ItemRow({
           onPointerLeave={cancelLongPress}
           className="relative flex min-h-row items-stretch"
         >
-          <div className="flex shrink-0 items-center">
-            {reorderMode && !isDragOverlay && (
+          {reorderMode && !isDragOverlay && (
+            <div className="flex shrink-0 items-center">
               <DragHandle {...attributes} {...listeners} />
-            )}
-
-            <div className="hit-touch relative shrink-0">
-              <span
-                className={`item-check flex items-center justify-center ${
-                  item.checked ? 'item-check-checked' : ''
-                }`}
-                aria-hidden="true"
-              >
-                <AnimatePresence mode="wait">
-                  {item.checked && (
-                    <motion.span
-                      key="check"
-                      initial={reducedMotion ? false : { opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={springSnappy}
-                    >
-                      <Icon name="check" size="sm" />
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </span>
-              <HapticSwitch
-                checked={item.checked}
-                label={item.checked ? 'Uncheck item' : 'Check item'}
-                onChange={handleToggle}
-              />
             </div>
-          </div>
+          )}
 
           <div
-            className={`flex min-w-0 flex-1 items-center gap-2 pr-3 ${
+            className={`flex min-w-0 flex-1 items-center gap-2 pl-3 ${
               showSeparator ? 'border-b border-separator' : ''
             }`}
           >
@@ -256,6 +228,34 @@ export function ItemRow({
                 <Icon name="close" size="sm" />
               </button>
             )}
+
+            <div className="hit-touch relative shrink-0">
+              <span
+                className={`item-check flex items-center justify-center ${
+                  item.checked ? 'item-check-checked' : ''
+                }`}
+                aria-hidden="true"
+              >
+                <AnimatePresence mode="wait">
+                  {item.checked && (
+                    <motion.span
+                      key="check"
+                      initial={reducedMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={springSnappy}
+                    >
+                      <Icon name="check" size="sm" />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </span>
+              <HapticSwitch
+                checked={item.checked}
+                label={item.checked ? 'Uncheck item' : 'Check item'}
+                onChange={handleToggle}
+              />
+            </div>
           </div>
         </motion.div>
       </div>

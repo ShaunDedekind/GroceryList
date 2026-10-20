@@ -4,9 +4,14 @@ import type { Session, GroceryItem, ListSection, CategoryId } from '../types'
 import { useActiveTab } from '../hooks/useActiveTab'
 import { useSectionCounts } from '../hooks/useActiveTab'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
-import { updateListName as updateListNameRemote } from '../lib/supabase'
+import {
+  reassignGroceryCategory,
+  updateListName as updateListNameRemote,
+} from '../lib/supabase'
 import { buildCategoryConfigFromResolved } from '../lib/categoryConfig'
 import type { ResolvedCategory } from '../lib/categoryConfig'
+import { remapOverridesAwayFromCategory } from '../lib/categoryOverrides'
+import { remapRecentItemsAwayFromCategory } from '../lib/recentItems'
 import { GroceryTab } from './GroceryTab'
 import { HomeTab } from './HomeTab'
 import { HenryTab } from './HenryTab'
@@ -101,6 +106,15 @@ export function ListView({
   }
 
   const handleSaveAisleSections = async (next: ResolvedCategory[]) => {
+    await saveConfig(buildCategoryConfigFromResolved(next))
+  }
+
+  const handleDeleteCustomAisle = async (category: ResolvedCategory) => {
+    if (category.builtin) return
+    await reassignGroceryCategory(session.listId, category.id, 'other')
+    remapOverridesAwayFromCategory(session.listId, category.id, 'other')
+    remapRecentItemsAwayFromCategory(session.listId, category.id, 'other')
+    const next = groceryResolved.filter((entry) => entry.id !== category.id)
     await saveConfig(buildCategoryConfigFromResolved(next))
   }
 
@@ -204,6 +218,7 @@ export function ListView({
           <AisleSectionsSettings
             categories={groceryResolved}
             onSave={handleSaveAisleSections}
+            onDeleteCustom={handleDeleteCustomAisle}
           />
           <div className="ml-4 border-b border-separator" />
           <button

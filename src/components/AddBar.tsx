@@ -4,7 +4,10 @@ import { DEFAULT_CATEGORY, getCategoryEmoji } from '../constants/categories'
 import { DEFAULT_HOME_CATEGORY, getHomeCategoryEmoji } from '../constants/homeCategories'
 import { DEFAULT_HENRY_CATEGORY } from '../constants/henryCategories'
 import { hapticLight } from '../lib/haptics'
-import { guessCategory } from '../lib/categoryGuess'
+import {
+  extraKeywordsFromResolved,
+  guessCategory,
+} from '../lib/categoryGuess'
 import { guessHomeCategory } from '../lib/homeCategoryGuess'
 import { saveOverride } from '../lib/categoryOverrides'
 import { saveHomeOverride } from '../lib/homeCategoryOverrides'
@@ -19,6 +22,7 @@ interface AddCategory {
   label: string
   emoji: string
   visible?: boolean
+  keywords?: string[]
 }
 
 interface AddExtras {
@@ -56,7 +60,8 @@ const SECTION_CONFIG = {
   grocery: {
     placeholder: 'Add item…',
     defaultCategory: DEFAULT_CATEGORY,
-    guess: guessCategory as (value: string, listId: string) => string | null,
+    useGroceryGuess: true,
+    useHomeGuess: false,
     recents: true,
     dueDate: false,
     menu: true,
@@ -67,7 +72,8 @@ const SECTION_CONFIG = {
   home: {
     placeholder: 'Fix, buy, or remember at home…',
     defaultCategory: DEFAULT_HOME_CATEGORY,
-    guess: guessHomeCategory as (value: string, listId: string) => string | null,
+    useGroceryGuess: false,
+    useHomeGuess: true,
     recents: true,
     dueDate: false,
     menu: false,
@@ -78,7 +84,8 @@ const SECTION_CONFIG = {
   henry: {
     placeholder: 'Something for Henry…',
     defaultCategory: DEFAULT_HENRY_CATEGORY,
-    guess: null,
+    useGroceryGuess: false,
+    useHomeGuess: false,
     recents: false,
     dueDate: true,
     menu: false,
@@ -95,8 +102,14 @@ function fromDatetimeLocalValue(value: string): string | null {
   return date.toISOString()
 }
 
-function recentEmoji(section: AddBarProps['section'], category: string): string {
+function recentEmoji(
+  section: AddBarProps['section'],
+  category: string,
+  categories: AddCategory[],
+): string {
   if (section === 'home') return getHomeCategoryEmoji(category as HomeCategoryId)
+  const fromList = categories.find((entry) => entry.id === category)
+  if (fromList) return fromList.emoji
   return getCategoryEmoji(category as CategoryId)
 }
 
@@ -209,8 +222,19 @@ export function AddBar(props: AddBarProps) {
   const handleTextChange = (value: string) => {
     setText(value)
     if (config.recents) setShowHints(value.trim().length >= 2)
-    if (!config.guess || categoryIsManual) return
-    const guessed = config.guess(value, listId)
+    if (categoryIsManual) return
+
+    let guessed: string | null = null
+    if (config.useGroceryGuess) {
+      guessed = guessCategory(value, {
+        listId,
+        extraKeywords: extraKeywordsFromResolved(categories),
+        knownIds: new Set(categories.map((category) => category.id)),
+      })
+    } else if (config.useHomeGuess) {
+      guessed = guessHomeCategory(value, listId)
+    }
+
     setSuggestedCategory(guessed)
     if (guessed) setCategory(guessed)
   }
@@ -380,7 +404,7 @@ export function AddBar(props: AddBarProps) {
                   onClick={() => handleRecentSelect(item)}
                   className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-body text-ink active:bg-cream-dark/60 dark:text-ink-dark dark:active:bg-surface"
                 >
-                  <span>{recentEmoji(section, item.category)}</span>
+                  <span>{recentEmoji(section, item.category, categories)}</span>
                   <span className="truncate">{item.text}</span>
                 </button>
               ))}
@@ -419,6 +443,9 @@ export function AddBar(props: AddBarProps) {
                 text: item.text,
                 category: item.category as CategoryId,
               }))}
+              getEmoji={(category) =>
+                recentEmoji(section, category, categories)
+              }
               onClose={() => setMenuOpen(false)}
               onPaste={menu.onPaste}
               onShare={menu.onShare}

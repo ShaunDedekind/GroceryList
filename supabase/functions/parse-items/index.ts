@@ -6,9 +6,10 @@ const CORS_HEADERS = {
     'authorization, x-client-info, apikey, content-type, x-list-code',
 }
 
-const VALID_CATEGORIES = new Set([
+const BUILTIN_CATEGORIES = [
   'fruit_veg',
   'snacks',
+  'sweet_tooth',
   'meat',
   'dairy',
   'deli',
@@ -19,31 +20,92 @@ const VALID_CATEGORIES = new Set([
   'personal_care',
   'household',
   'other',
-])
+] as const
 
 const MODEL = 'claude-haiku-4-5-20251001'
 const MAX_ITEMS = 50
 const RATE_LIMIT = 30
 const RATE_WINDOW_MS = 24 * 60 * 60 * 1000
 
-const SYSTEM_PROMPT = `You extract grocery items from pasted text (shopping lists, recipes, meal plans).
+const CUSTOM_ID_PATTERN = /^custom_[a-z0-9]+(?:_[a-z0-9]+)*$/
+
+interface CustomCategory {
+  id: string
+  label: string
+  emoji?: string
+  keywords?: string[]
+}
+
+interface CategoryConfig {
+  order?: string[]
+  hidden?: string[]
+  labels?: Record<string, string>
+  custom?: CustomCategory[]
+}
+
+function isCustomCategoryId(value: unknown): value is string {
+  return typeof value === 'string' && CUSTOM_ID_PATTERN.test(value)
+}
+
+function parseCategoryConfig(raw: unknown): CategoryConfig {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const obj = raw as Record<string, unknown>
+  const custom: CustomCategory[] = []
+  if (Array.isArray(obj.custom)) {
+    for (const entry of obj.custom) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+      const row = entry as Record<string, unknown>
+      if (!isCustomCategoryId(row.id)) continue
+      if (typeof row.label !== 'string' || !row.label.trim()) continue
+      const keywords = Array.isArray(row.keywords)
+        ? row.keywords.filter((k): k is string => typeof k === 'string' && k.trim().length > 0)
+        : undefined
+      custom.push({
+        id: row.id,
+        label: row.label.trim(),
+        ...(typeof row.emoji === 'string' ? { emoji: row.emoji } : {}),
+        ...(keywords?.length ? { keywords } : {}),
+      })
+    }
+  }
+  return { custom: custom.length ? custom : undefined }
+}
+
+function buildSystemPrompt(config: CategoryConfig): string {
+  const custom = config.custom ?? []
+  const categoryIds = [...BUILTIN_CATEGORIES, ...custom.map((entry) => entry.id)]
+  const customGuide =
+    custom.length === 0
+      ? ''
+      : `\nCustom aisles for this list:\n${custom
+          .map((entry) => {
+            const keywords = entry.keywords?.length
+              ? ` (keywords: ${entry.keywords.join(', ')})`
+              : ''
+            return `- ${entry.id}: ${entry.label}${keywords}`
+          })
+          .join('\n')}\nPrefer a matching custom aisle when keywords or labels fit.`
+
+  return `You extract grocery items from pasted text (shopping lists, recipes, meal plans).
 Return ONLY valid JSON with this exact shape: {"items":[{"text":"item name","category":"category_id"}]}
 Use short grocery item names only — no amounts or units (e.g. "cumin" not "1 tsp cumin", "eggs" not "2 eggs"). Strip cooking instructions and prep notes.
-Categories must be exactly one of: fruit_veg, snacks, meat, dairy, deli, bakery, pantry, frozen, drinks, personal_care, household, other.
+Categories must be exactly one of: ${categoryIds.join(', ')}.
 Category guide:
 - fruit_veg: produce, herbs, fresh vegetables and fruit
-- snacks: chips, crackers, cookies, candy, snack foods
+- snacks: chips, crackers, savory snack foods
+- sweet_tooth: candy, chocolate, biscuits, cookies, lollies, shelf sweets
 - meat: meat, poultry, fish, seafood
 - dairy: milk, cheese, eggs, yogurt, butter
 - deli: prepared foods, hummus, rotisserie chicken, deli salads
 - bakery: bread, buns, pastries, tortillas
-- pantry: dry goods, canned goods, pasta, rice, spices, oils, sauces
+- pantry: dry goods, canned goods, pasta shapes (rigatoni, penne, spaghetti, etc.), rice, spices, oils, sauces
 - frozen: frozen foods, ice cream
 - drinks: beverages including alcohol
 - personal_care: shampoo, vitamins, cotton tips, toiletries
 - household: cleaning, paper goods, laundry
-- other: anything else
+- other: anything else${customGuide}
 Max 50 items. Skip non-food items unless clearly on a shopping list.`
+}
 
 interface ParsedItem {
   text: string
@@ -94,13 +156,19 @@ Deno.serve(async (req) => {
 
   const { data: list, error: listError } = await admin
     .from('lists')
-    .select('id')
+    .select('id, category_config')
     .eq('code', listCode)
     .maybeSingle()
 
   if (listError || !list) {
     return jsonResponse({ error: 'List not found' }, 404)
   }
+
+  const categoryConfig = parseCategoryConfig(list.category_config)
+  const validCategories = new Set<string>([
+    ...BUILTIN_CATEGORIES,
+    ...(categoryConfig.custom ?? []).map((entry) => entry.id),
+  ])
 
   const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString()
   const { count, error: countError } = await admin
@@ -134,7 +202,7 @@ Deno.serve(async (req) => {
       system: [
         {
           type: 'text',
-          text: SYSTEM_PROMPT,
+          text: buildSystemPrompt(categoryConfig),
           cache_control: { type: 'ephemeral' },
         },
       ],
@@ -173,7 +241,7 @@ Deno.serve(async (req) => {
     }))
     .filter((item) => item.text.length > 0)
     .filter((item) => {
-      if (!VALID_CATEGORIES.has(item.category)) {
+      if (!validCategories.has(item.category)) {
         item.category = 'other'
       }
       return true

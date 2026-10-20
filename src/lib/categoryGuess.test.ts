@@ -40,6 +40,49 @@ describe('guessCategory', () => {
     expect(guessCategory('chips')).toBe('snacks')
   })
 
+  it('classifies chocolate as sweet tooth', () => {
+    expect(guessCategory('chocolate')).toBe('sweet_tooth')
+  })
+
+  it('classifies lollies as sweet tooth', () => {
+    expect(guessCategory('lollies')).toBe('sweet_tooth')
+  })
+
+  it('classifies cookies as sweet tooth', () => {
+    expect(guessCategory('cookies')).toBe('sweet_tooth')
+  })
+
+  it('classifies rigatoni as pantry', () => {
+    expect(guessCategory('rigatoni')).toBe('pantry')
+  })
+
+  it('classifies penne as pantry', () => {
+    expect(guessCategory('penne')).toBe('pantry')
+  })
+
+  it('classifies spaghetti as pantry', () => {
+    expect(guessCategory('spaghetti')).toBe('pantry')
+  })
+
+  it('uses custom aisle keywords when provided', () => {
+    expect(
+      guessCategory('briquettes', {
+        extraKeywords: { custom_bbq_zz99: ['briquettes', 'charcoal'] },
+        knownIds: new Set(['custom_bbq_zz99', 'other']),
+      }),
+    ).toBe('custom_bbq_zz99')
+  })
+
+  it('ignores stale overrides outside known ids', () => {
+    saveOverride(LIST_ID, 'mystery item', 'custom_gone_0000')
+    expect(
+      guessCategory('mystery item', {
+        listId: LIST_ID,
+        knownIds: new Set(['other', 'pantry']),
+      }),
+    ).toBeNull()
+  })
+
   it('classifies hummus as deli', () => {
     expect(guessCategory('hummus')).toBe('deli')
   })

@@ -1,8 +1,9 @@
 export type ListSection = 'grocery' | 'home' | 'henry'
 
-export type CategoryId =
+export type BuiltinCategoryId =
   | 'fruit_veg'
   | 'snacks'
+  | 'sweet_tooth'
   | 'meat'
   | 'dairy'
   | 'deli'
@@ -13,6 +14,9 @@ export type CategoryId =
   | 'personal_care'
   | 'household'
   | 'other'
+
+/** Built-in aisle IDs, or synced custom IDs matching `custom_*`. */
+export type CategoryId = BuiltinCategoryId | (string & {})
 
 export type HomeCategoryId =
   | 'maintenance'
@@ -33,10 +37,18 @@ export type HenryCategoryId =
 
 export type ItemCategoryId = CategoryId | HomeCategoryId | HenryCategoryId
 
+export interface CustomCategory {
+  id: string
+  label: string
+  emoji: string
+  keywords?: string[]
+}
+
 export interface CategoryConfig {
   order?: CategoryId[]
   hidden?: CategoryId[]
-  labels?: Partial<Record<CategoryId, string>>
+  labels?: Partial<Record<string, string>>
+  custom?: CustomCategory[]
 }
 
 export interface HomeCategoryConfig {

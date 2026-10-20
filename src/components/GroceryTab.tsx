@@ -12,12 +12,15 @@ import {
 } from '@dnd-kit/core'
 import { AnimatePresence } from 'motion/react'
 import type { Session, CategoryId, GroceryItem } from '../types'
-import { isCategoryId } from '../constants/categories'
 import { useItems } from '../hooks/useItems'
-import { getCategoryEmoji, getCategoryLabel } from '../constants/categories'
 import { saveOverride } from '../lib/categoryOverrides'
-import type { ResolvedCategory } from '../lib/categoryConfig'
-import { computeReorderPatch, sortItemsInCategory, sortShopItems } from '../lib/itemOrder'
+import {
+  getCategoryEmojiFromResolved,
+  getCategoryLabelFromResolved,
+  resolveCategoryId,
+  type ResolvedCategory,
+} from '../lib/categoryConfig'
+import { computeReorderPatch, sortShopItems } from '../lib/itemOrder'
 import { getBuyAgainChips } from '../lib/buyAgain'
 import { getShopMode, setShopMode } from '../lib/shopMode'
 import { hapticLight } from '../lib/haptics'
@@ -99,13 +102,23 @@ export function GroceryTab({
     const cats = resolved as ResolvedCategory[]
     const map = new Map<CategoryId, GroceryItem[]>()
     for (const cat of cats) {
-      map.set(cat.id, sortItemsInCategory(items, cat.id))
+      map.set(cat.id, [])
     }
     for (const item of items) {
-      const id = isCategoryId(item.category) ? item.category : 'other'
-      if (!map.has(id)) {
-        map.set(id, sortItemsInCategory(items, id))
-      }
+      const id = resolveCategoryId(item.category, cats)
+      const bucket = map.get(id) ?? []
+      bucket.push(item)
+      map.set(id, bucket)
+    }
+    for (const [id, bucket] of map) {
+      map.set(
+        id,
+        [...bucket].sort((a, b) => {
+          if (a.checked !== b.checked) return a.checked ? 1 : -1
+          if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order
+          return a.created_at.localeCompare(b.created_at)
+        }),
+      )
     }
     return map
   }, [items, resolved])
@@ -119,13 +132,15 @@ export function GroceryTab({
         !undo.hiddenIds.has(item.id) &&
         (!item.checked || lingeringIds.has(item.id)),
     )
-    const forSort = visible.map((item) =>
-      item.checked ? { ...item, checked: false } : item,
-    )
+    const forSort = visible.map((item) => ({
+      ...item,
+      checked: false,
+      category: resolveCategoryId(item.category, resolved),
+    }))
     const sorted = sortShopItems(forSort, categoryIds as CategoryId[])
     const byId = new Map(visible.map((item) => [item.id, item]))
     return sorted.map((item) => byId.get(item.id) ?? item)
-  }, [items, categoryIds, undo.hiddenIds, lingeringIds])
+  }, [items, categoryIds, resolved, undo.hiddenIds, lingeringIds])
 
   const buyAgainChips = useMemo(() => getBuyAgainChips(items), [items])
 
@@ -364,15 +379,14 @@ export function GroceryTab({
             </p>
           </div>
         ) : shopMode ? (
-          <div className="mx-gutter overflow-hidden rounded-[var(--radius-md)] bg-cream dark:bg-surface-raised">
-            <ShopFlatList
-              items={shopItems}
-              currentUserName={session.displayName}
-              onToggle={handleToggle}
-              onDelete={requestDelete}
-              onEdit={setEditingItem}
-            />
-          </div>
+          <ShopFlatList
+            items={shopItems}
+            categories={resolved}
+            currentUserName={session.displayName}
+            onToggle={handleToggle}
+            onDelete={requestDelete}
+            onEdit={setEditingItem}
+          />
         ) : (
           <DndContext
             sensors={sensors}
@@ -471,10 +485,10 @@ export function GroceryTab({
       {showPaste && (
         <PasteSheet
           listId={session.listId}
+          categories={resolved}
           onAddItems={addItems}
           onClose={() => setShowPaste(false)}
         />
-
       )}
 
       {editingItem && (
@@ -484,8 +498,8 @@ export function GroceryTab({
           categories={visibleCategories as ResolvedCategory[]}
           onSave={handleSaveItem}
           onClose={() => setEditingItem(null)}
-          getCategoryLabel={(id) => getCategoryLabel(id as CategoryId)}
-          getCategoryEmoji={(id) => getCategoryEmoji(id as CategoryId)}
+          getCategoryLabel={(id) => getCategoryLabelFromResolved(resolved, id)}
+          getCategoryEmoji={(id) => getCategoryEmojiFromResolved(resolved, id)}
           onSaveOverride={(listId, text, cat) =>
             saveOverride(listId, text, cat as CategoryId)
           }

@@ -54,6 +54,7 @@ interface ListActionMenuProps {
   shopMode: boolean
   anchorRef: RefObject<HTMLButtonElement | null>
   recentItems: RecentItem[]
+  getEmoji?: (category: RecentItem['category']) => string
   onClose: () => void
   onPaste: () => void
   onShare: () => void
@@ -91,9 +92,11 @@ function MenuItem({
 
 function RecentMenuItem({
   item,
+  emoji,
   onClick,
 }: {
   item: RecentItem
+  emoji: string
   onClick: () => void
 }) {
   return (
@@ -103,7 +106,7 @@ function RecentMenuItem({
       onClick={onClick}
       className="press-scale flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-body text-ink active:bg-cream-dark/60 dark:text-ink-dark dark:active:bg-surface"
     >
-      <span className="shrink-0 text-base">{getCategoryEmoji(item.category)}</span>
+      <span className="shrink-0 text-base">{emoji}</span>
       <span className="min-w-0 truncate font-medium">{item.text}</span>
     </button>
   )
@@ -159,6 +162,7 @@ export function ListActionMenu({
   shopMode,
   anchorRef,
   recentItems,
+  getEmoji = getCategoryEmoji,
   onClose,
   onPaste,
   onShare,
@@ -248,6 +252,7 @@ export function ListActionMenu({
               <RecentMenuItem
                 key={`${item.text}-${item.category}`}
                 item={item}
+                emoji={getEmoji(item.category)}
                 onClick={() => handleRecentAdd(item)}
               />
             ))}

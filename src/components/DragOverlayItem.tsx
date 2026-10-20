@@ -12,19 +12,11 @@ export function DragOverlayItem({ item, currentUserName }: DragOverlayItemProps)
   const { title, note } = parseItemDisplay(item.text)
 
   return (
-    <div className="flex min-h-row items-center rounded-[var(--radius-md)] bg-cream shadow-lg dark:bg-surface-raised">
+    <div className="flex min-h-row items-center rounded-[var(--radius-md)] bg-cream pl-1 shadow-lg dark:bg-surface-raised">
       <span className="hit-touch shrink-0 text-warm-gray-light">
         <Icon name="reorder" size="sm" />
       </span>
-      <span
-        className={`item-check flex shrink-0 items-center justify-center ${
-          item.checked ? 'item-check-checked' : ''
-        }`}
-        aria-hidden="true"
-      >
-        {item.checked && <Icon name="check" size="sm" />}
-      </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 py-1.5">
         <span
           className={`block truncate text-row-title leading-tight ${
             item.checked
@@ -44,6 +36,14 @@ export function DragOverlayItem({ item, currentUserName }: DragOverlayItemProps)
         name={item.added_by}
         isCurrentUser={item.added_by === currentUserName}
       />
+      <span
+        className={`item-check mx-2 flex shrink-0 items-center justify-center ${
+          item.checked ? 'item-check-checked' : ''
+        }`}
+        aria-hidden="true"
+      >
+        {item.checked && <Icon name="check" size="sm" />}
+      </span>
     </div>
   )
 }

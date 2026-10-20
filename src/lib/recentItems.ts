@@ -84,3 +84,25 @@ export function saveRecentHomeItem(
 
   localStorage.setItem(homeKey(listId), JSON.stringify(updated))
 }
+
+export function remapRecentItemsAwayFromCategory(
+  listId: string,
+  categoryId: CategoryId,
+  fallback: CategoryId = 'other',
+): void {
+  const updated = getRecentItems(listId).map((item) =>
+    item.category === categoryId ? { ...item, category: fallback } : item,
+  )
+  localStorage.setItem(groceryKey(listId), JSON.stringify(updated))
+}
+
+export function pruneRecentItemsToKnown(
+  listId: string,
+  knownIds: ReadonlySet<string>,
+  fallback: CategoryId = 'other',
+): void {
+  const updated = getRecentItems(listId).map((item) =>
+    knownIds.has(item.category) ? item : { ...item, category: fallback },
+  )
+  localStorage.setItem(groceryKey(listId), JSON.stringify(updated))
+}
