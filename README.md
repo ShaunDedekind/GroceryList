@@ -75,9 +75,59 @@ Smart parse is rate-limited to 30 calls per list per day. Without the edge funct
 3. Add two environment variables:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY` (the publishable/anon key — safe to expose in the browser)
-4. Deploy. Every push to `main` redeploys automatically.
+4. Deploy. Every push to `main` redeploys **production** automatically.
 
 Build settings Vercel should auto-detect: **Vite**, `npm run build`, output `dist`.
+
+### Beta branch (try UI before your partner gets it)
+
+Use a long-lived **`beta`** branch so you can dogfood new UI on a Preview URL while production (`main`) stays stable for your partner.
+
+| | Production | Beta |
+|---|---|---|
+| Git branch | `main` | `beta` |
+| Vercel | Production deployment | Preview deployment |
+| Who uses it | Partner’s Home Screen icon | Your second Home Screen icon |
+| Data | Same Supabase project / list code | Same (frontend-only split) |
+
+**First-time setup**
+
+1. Create and push the branch (already done in this repo if `origin/beta` exists):
+   ```bash
+   git checkout main
+   git pull
+   git checkout -b beta
+   git push -u origin beta
+   ```
+2. In the [Vercel dashboard](https://vercel.com/dashboard) → your project → **Deployments**, open the latest deployment for branch `beta`. Copy the Preview URL (often looks like `…-git-beta-….vercel.app`).
+3. Optional but nice: Project → **Settings** → **Domains** → assign a stable hostname (e.g. `beta.yourdomain.com`) to the **`beta`** branch so the URL never changes.
+4. On your iPhone only: open the Preview URL in Safari → Share → **Add to Home Screen** → name it something like “Groceries β”. Leave your partner’s production icon alone.
+
+**Day-to-day**
+
+```bash
+# Start from latest production
+git checkout main && git pull
+git checkout beta
+git merge main          # keep beta up to date with production
+# …hack, commit…
+git push origin beta    # Vercel rebuilds the Preview; production unchanged
+```
+
+When the beta feels good:
+
+```bash
+git checkout main
+git merge beta
+git push origin main    # production redeploys; partner gets the update
+```
+
+**Notes**
+
+- Same list code on beta and production means you both still shop the same list; only the **app shell** differs.
+- After a beta deploy, use Settings → **Check for updates** (or a hard refresh) if the PWA is stubborn about caching.
+- Pushing `beta` does **not** deploy Supabase Edge Functions. If you change `parse-items`, run `supabase functions deploy parse-items` separately — that hits the shared backend for everyone.
+- Prefer throwaway risky DB experiments on a spare list code (or a second Supabase project) before merging to `main`.
 
 ---
 
