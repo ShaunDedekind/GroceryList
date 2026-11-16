@@ -101,7 +101,7 @@ export function ItemEditSheet({
 
   return (
     <BottomSheet onClose={onClose} maxHeightClass="max-h-vv-90">
-      <h3 className="text-title font-semibold text-ink dark:text-ink-dark">
+      <h3 className="text-title text-ink dark:text-ink-dark">
         Edit item
       </h3>
 

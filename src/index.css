@@ -1,37 +1,39 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-cream: #fdfbf7;
-  --color-cream-dark: #f6f1ea;
-  --color-sage: #006241;
-  --color-sage-light: #1a7a56;
-  --color-sage-dark: #004830;
-  --color-celebrate: #006241;
-  --color-blush: #f7d6c8;
-  --color-sky: #dceefa;
-  --color-sunshine: #fff0b3;
-  --color-warm-gray: #6a6158;
-  --color-warm-gray-light: #9c9288;
-  --color-surface: #1c1916;
-  --color-surface-raised: #2a2520;
-  --color-border-dark: #3f3832;
-  --color-ink: #222222;
-  --color-ink-dark: #f7f3ee;
-  --color-separator: #efe8df;
-  --color-separator-dark: #3f3832;
+  /* Combination 229 — Japanese colour dictionary: #fa9442 #172713 #b5d1cc */
+  --color-cream: #f4f9f8;
+  --color-cream-dark: #b5d1cc;
+  --color-sage: #172713;
+  --color-sage-light: #2f4528;
+  --color-sage-dark: #0d160b;
+  --color-celebrate: #fa9442;
+  --color-blush: #fbc99a;
+  --color-sky: #d5e8e4;
+  --color-sunshine: #ffd6a8;
+  --color-warm-gray: #4d5c4a;
+  --color-warm-gray-light: #7a8c78;
+  --color-surface: #172713;
+  --color-surface-raised: #24331f;
+  --color-border-dark: #3a4a35;
+  --color-ink: #172713;
+  --color-ink-dark: #e8f2ef;
+  --color-separator: #9db8b2;
+  --color-separator-dark: #3a4a35;
   --color-error: #c2410c;
   --color-error-bg: #fff1eb;
   --color-error-bg-dark: #3f1d14;
-  --color-overlay: rgba(34, 34, 34, 0.32);
-  --color-line: rgba(34, 34, 34, 0.08);
-  --color-line-dark: rgba(253, 251, 247, 0.1);
-  --color-surface-soft: rgba(34, 34, 34, 0.04);
-  --color-surface-soft-dark: rgba(253, 251, 247, 0.06);
-  --color-surface-strong: rgba(253, 251, 247, 0.86);
-  --color-surface-strong-dark: rgba(28, 25, 22, 0.9);
+  --color-overlay: rgba(23, 39, 19, 0.4);
+  --color-line: rgba(23, 39, 19, 0.1);
+  --color-line-dark: rgba(181, 209, 204, 0.14);
+  --color-surface-soft: rgba(23, 39, 19, 0.06);
+  --color-surface-soft-dark: rgba(181, 209, 204, 0.08);
+  --color-surface-strong: rgba(244, 249, 248, 0.88);
+  --color-surface-strong-dark: rgba(23, 39, 19, 0.92);
+  --color-accent: #fa9442;
 
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: 'New York', ui-serif, 'Iowan Old Style', Palatino, Georgia, serif;
+  --font-sans: 'Aileron', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: 'Bluu Next', ui-serif, Georgia, 'Times New Roman', serif;
 
   --text-large-title: 2.125rem;
   --text-title: 1.375rem;
@@ -92,13 +94,17 @@ body {
 .text-large-title {
   font-family: var(--font-serif);
   font-size: var(--text-large-title);
+  font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
 .text-title {
+  font-family: var(--font-serif);
   font-size: var(--text-title);
+  font-weight: 700;
   line-height: 1.25;
+  letter-spacing: -0.015em;
 }
 
 .text-headline {
@@ -231,16 +237,16 @@ select {
 .item-check-checked {
   border-color: var(--color-sage);
   background: var(--color-sage);
-  color: white;
+  color: var(--color-cream);
 }
 
 .btn-primary {
   min-height: 44px;
   border-radius: var(--radius-pill);
   background: var(--color-sage);
-  color: white;
+  color: var(--color-cream);
   font-weight: 600;
-  box-shadow: 0 10px 24px rgba(0, 98, 65, 0.22);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-sage) 28%, transparent);
 }
 
 .btn-primary:active {
@@ -248,23 +254,35 @@ select {
 }
 
 .btn-accent {
-  background: var(--color-sage);
-  box-shadow: 0 8px 18px rgba(0, 98, 65, 0.22);
-  color: white;
+  background: var(--color-accent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: var(--color-sage);
 }
 
 .tint-blush {
-  background: linear-gradient(180deg, #fffdfb 0%, color-mix(in srgb, var(--color-blush) 78%, white) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-cream) 0%,
+    color-mix(in srgb, var(--color-blush) 78%, white) 100%
+  );
   border-color: color-mix(in srgb, var(--color-blush) 80%, white);
 }
 
 .tint-sky {
-  background: linear-gradient(180deg, #fffeff 0%, color-mix(in srgb, var(--color-sky) 82%, white) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-cream) 0%,
+    color-mix(in srgb, var(--color-sky) 82%, white) 100%
+  );
   border-color: color-mix(in srgb, var(--color-sky) 90%, white);
 }
 
 .tint-sunshine {
-  background: linear-gradient(180deg, #fffef8 0%, color-mix(in srgb, var(--color-sunshine) 80%, white) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-cream) 0%,
+    color-mix(in srgb, var(--color-sunshine) 80%, white) 100%
+  );
   border-color: color-mix(in srgb, var(--color-sunshine) 85%, white);
 }
 
@@ -272,19 +290,23 @@ select {
   .tint-blush,
   .tint-sky,
   .tint-sunshine {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-cream-dark) 8%, transparent),
+      color-mix(in srgb, var(--color-cream-dark) 4%, transparent)
+    );
   }
 
   .tint-blush {
-    border-color: rgba(247, 214, 200, 0.22);
+    border-color: color-mix(in srgb, var(--color-blush) 28%, transparent);
   }
 
   .tint-sky {
-    border-color: rgba(220, 238, 250, 0.2);
+    border-color: color-mix(in srgb, var(--color-sky) 28%, transparent);
   }
 
   .tint-sunshine {
-    border-color: rgba(255, 240, 179, 0.2);
+    border-color: color-mix(in srgb, var(--color-sunshine) 28%, transparent);
   }
 }
 

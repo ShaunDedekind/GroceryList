@@ -49,4 +49,14 @@ describe('getBuyAgainChips', () => {
     )
     expect(getBuyAgainChips(items, 2)).toHaveLength(2)
   })
+
+  it('hides a chip when an unchecked duplicate already exists', () => {
+    const chips = getBuyAgainChips([
+      item('1', 'milk', true, '2024-01-03T00:00:00.000Z', 'dairy'),
+      item('2', 'Milk', false, '2024-01-02T00:00:00.000Z', 'dairy'),
+      item('3', 'bread', true, '2024-01-01T00:00:00.000Z', 'bakery'),
+    ])
+
+    expect(chips).toEqual([{ text: 'bread', category: 'bakery' }])
+  })
 })

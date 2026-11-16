@@ -355,7 +355,7 @@ export function GroceryTab({
             <button
               type="button"
               onClick={exitReorderMode}
-              className="hit-touch shrink-0 rounded-full bg-sage px-3 text-meta font-semibold text-white active:bg-sage-dark"
+              className="hit-touch shrink-0 rounded-full bg-sage px-3 text-meta font-semibold text-cream active:bg-sage-dark"
             >
               Done
             </button>
@@ -463,6 +463,7 @@ export function GroceryTab({
         section="grocery"
         listId={session.listId}
         categories={visibleCategories as ResolvedCategory[]}
+        items={items}
         onAdd={(text, category, extras) => addItem(text, category as CategoryId, extras)}
         onPaste={() => setShowPaste(true)}
         onShare={() => setShowShare(true)}

@@ -88,7 +88,7 @@ export function PasteSheet({
 
   return (
     <BottomSheet onClose={onClose} maxHeightClass="max-h-vv-85">
-      <h3 className="text-title font-semibold text-ink dark:text-ink-dark">
+      <h3 className="text-title text-ink dark:text-ink-dark">
         Paste items
       </h3>
       <p className="mt-1 text-footnote text-warm-gray dark:text-warm-gray-light">

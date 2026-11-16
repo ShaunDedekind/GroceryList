@@ -46,7 +46,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
             <span className="absolute bottom-1 left-8 h-10 w-10 rounded-full bg-sunshine" />
             <BrandMark className="absolute bottom-0 left-0 shadow-card" />
           </div>
-          <h1 className="mt-6 text-large-title font-semibold text-ink dark:text-ink-dark">
+          <h1 className="mt-6 text-large-title text-ink dark:text-ink-dark">
             Groceries
           </h1>
           <p className="mt-2 max-w-sm text-body text-warm-gray dark:text-warm-gray-light">
@@ -87,7 +87,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
         >
           <Icon name="back" size="md" />
         </button>
-        <h2 className="text-title font-semibold text-ink dark:text-ink-dark">
+        <h2 className="text-title text-ink dark:text-ink-dark">
           {isCreate ? 'New list' : 'Join with code'}
         </h2>
       </header>

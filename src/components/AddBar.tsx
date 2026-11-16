@@ -13,6 +13,13 @@ import { saveOverride } from '../lib/categoryOverrides'
 import { saveHomeOverride } from '../lib/homeCategoryOverrides'
 import { parseItemText } from '../lib/parseItemText'
 import { getRecentItems, getRecentHomeItems } from '../lib/recentItems'
+import {
+  filterSuggestionsNotLive,
+  isLiveSuggestionText,
+  normalizeSuggestionText,
+  rankSuggestionHints,
+  uncheckedTextKeys,
+} from '../lib/suggestionFilter'
 import { ListActionMenu } from './ListActionMenu'
 import { CategoryPicker } from './CategoryPicker'
 import { Icon } from './Icon'
@@ -38,6 +45,8 @@ interface RecentEntry {
 type AddBarBase = {
   listId: string
   categories: AddCategory[]
+  /** Current section items — used to hide suggestions already unchecked on the list. */
+  items?: ReadonlyArray<{ text: string; checked: boolean }>
   onAdd: (text: string, category: string, extras?: AddExtras) => Promise<void>
 }
 
@@ -120,7 +129,7 @@ function loadRecents(section: AddBarProps['section'], listId: string): RecentEnt
 }
 
 export function AddBar(props: AddBarProps) {
-  const { section, listId, categories, onAdd } = props
+  const { section, listId, categories, onAdd, items = [] } = props
   const config = SECTION_CONFIG[section]
   const [text, setText] = useState('')
   const [category, setCategory] = useState<string>(config.defaultCategory)
@@ -156,13 +165,48 @@ export function AddBar(props: AddBarProps) {
   const isSuggested =
     suggestedCategory !== null && category === suggestedCategory && !categoryIsManual
 
+  const liveKeys = useMemo(() => uncheckedTextKeys(items), [items])
+
+  const menuRecents = useMemo(
+    () =>
+      filterSuggestionsNotLive(recentItems, liveKeys).map((item) => ({
+        text: item.text,
+        category: item.category as CategoryId,
+      })),
+    [recentItems, liveKeys],
+  )
+
   const recentHints = useMemo(() => {
-    if (!config.recents || text.trim().length < 2) return []
-    const prefix = text.trim().toLowerCase()
-    return recentItems
-      .filter((item) => item.text.toLowerCase().startsWith(prefix))
-      .slice(0, 5)
-  }, [config.recents, text, recentItems])
+    if (!config.recents) return []
+    return rankSuggestionHints(recentItems, text, liveKeys, 5)
+  }, [config.recents, text, recentItems, liveKeys])
+
+  const typedIsLive = useMemo(() => {
+    if (!config.recents || text.trim().length < 2) return false
+    return isLiveSuggestionText(text, liveKeys)
+  }, [config.recents, text, liveKeys])
+
+  const hasLiveOnlyMatches = useMemo(() => {
+    if (!config.recents || text.trim().length < 2 || recentHints.length > 0) {
+      return false
+    }
+    if (typedIsLive) return true
+    const query = normalizeSuggestionText(text)
+    return recentItems.some((item) => {
+      const key = normalizeSuggestionText(item.text)
+      return key.includes(query) && liveKeys.has(key)
+    })
+  }, [
+    config.recents,
+    text,
+    recentHints.length,
+    typedIsLive,
+    recentItems,
+    liveKeys,
+  ])
+
+  const showHintPanel =
+    config.recents && showHints && (recentHints.length > 0 || hasLiveOnlyMatches)
 
   const refreshRecent = useCallback(() => {
     if (!config.recents) return
@@ -251,23 +295,28 @@ export function AddBar(props: AddBarProps) {
     inputRef.current?.focus()
   }
 
-  const handleRecentSelect = (item: RecentEntry) => {
-    setCategoryIsManual(true)
-    setSuggestedCategory(null)
-    setText(item.text)
-    setCategory(item.category)
-    setShowHints(false)
-    inputRef.current?.focus()
-  }
-
   const handleRecentAdd = async (item: RecentEntry) => {
+    if (isLiveSuggestionText(item.text, liveKeys) || adding) return
+    setShowHints(false)
+    setShowCategories(false)
+    setAdding(true)
+    setError(null)
     try {
       await onAdd(item.text, item.category)
       persistOverride(item.text, item.category)
       refreshRecent()
+      setText('')
+      setCategoryIsManual(false)
+      setSuggestedCategory(null)
+      setCategory(defaultCategory)
       hapticLight()
+      setJustAdded(true)
+      setTimeout(() => setJustAdded(false), 450)
+      inputRef.current?.focus()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to add item')
+    } finally {
+      setAdding(false)
     }
   }
 
@@ -394,20 +443,30 @@ export function AddBar(props: AddBarProps) {
             />
           </div>
 
-          {config.recents && showHints && recentHints.length > 0 && (
+          {showHintPanel && (
             <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-[var(--radius-md)] border border-separator bg-cream shadow-lg dark:bg-surface-raised">
-              {recentHints.map((item) => (
-                <button
-                  key={`${item.text}-${item.category}`}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleRecentSelect(item)}
-                  className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-body text-ink active:bg-cream-dark/60 dark:text-ink-dark dark:active:bg-surface"
-                >
-                  <span>{recentEmoji(section, item.category, categories)}</span>
-                  <span className="truncate">{item.text}</span>
-                </button>
-              ))}
+              {hasLiveOnlyMatches && recentHints.length === 0 ? (
+                <p className="flex min-h-11 items-center px-3 text-body text-warm-gray dark:text-warm-gray-light">
+                  Already on list
+                </p>
+              ) : (
+                recentHints.map((item) => (
+                  <button
+                    key={`${item.text}-${item.category}`}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => void handleRecentAdd(item)}
+                    disabled={adding}
+                    className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-body text-ink active:bg-cream-dark/60 disabled:opacity-50 dark:text-ink-dark dark:active:bg-surface"
+                  >
+                    <span>{recentEmoji(section, item.category, categories)}</span>
+                    <span className="min-w-0 flex-1 truncate">{item.text}</span>
+                    <span className="shrink-0 text-meta font-semibold text-sage dark:text-sage-light">
+                      Add
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>
@@ -439,10 +498,7 @@ export function AddBar(props: AddBarProps) {
               reorderMode={menu.reorderMode}
               shopMode={menu.shopMode}
               anchorRef={moreButtonRef}
-              recentItems={recentItems.map((item) => ({
-                text: item.text,
-                category: item.category as CategoryId,
-              }))}
+              recentItems={menuRecents}
               getEmoji={(category) =>
                 recentEmoji(section, category, categories)
               }

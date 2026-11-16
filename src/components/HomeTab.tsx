@@ -210,6 +210,7 @@ export function HomeTab({
         section="home"
         listId={session.listId}
         categories={visibleCategories as ResolvedHomeCategory[]}
+        items={items}
         onAdd={(text, category) => handleAdd(text, category as HomeCategoryId)}
       />
 

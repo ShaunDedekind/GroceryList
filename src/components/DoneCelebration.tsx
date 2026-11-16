@@ -43,7 +43,7 @@ export function DoneCelebration({
         >
           <BrandMark className="h-16 w-16" />
         </motion.div>
-        <p className="mt-4 text-title font-semibold text-ink dark:text-ink-dark">
+        <p className="mt-4 text-title text-ink dark:text-ink-dark">
           {message}
         </p>
       </motion.div>
