@@ -14,9 +14,9 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'Grocery List',
-        short_name: 'Groceries',
-        description: 'Shared grocery list for you and your partner',
+        name: 'Home OS',
+        short_name: 'Home OS',
+        description: 'Calm home operating system for Shaun & Rosie',
         theme_color: '#B5D1CC',
         background_color: '#B5D1CC',
         display: 'standalone',

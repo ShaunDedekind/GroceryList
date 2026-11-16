@@ -65,7 +65,7 @@ function generateCode(): string {
   return code
 }
 
-export async function createList(name = 'Our Grocery List') {
+export async function createList(name = 'Home OS') {
   const code = generateCode()
   const { data, error } = await supabase.rpc('create_list', {
     p_code: code,

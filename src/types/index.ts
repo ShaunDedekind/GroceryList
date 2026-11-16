@@ -20,22 +20,49 @@ export type CategoryId = BuiltinCategoryId | (string & {})
 
 export type HomeCategoryId =
   | 'maintenance'
+  | 'purchases'
+  | 'bills'
+  | 'admin'
   | 'cleaning'
   | 'supplies'
-  | 'projects'
   | 'garden'
   | 'kids'
   | 'pets'
   | 'other'
+  /** @deprecated Mapped to purchases */
+  | 'projects'
 
 export type HenryCategoryId =
   | 'health'
-  | 'appointments'
   | 'admin'
-  | 'supplies'
+  | 'activities'
+  | 'gear'
   | 'other'
+  /** @deprecated Mapped to activities */
+  | 'appointments'
+  /** @deprecated Mapped to gear */
+  | 'supplies'
 
 export type ItemCategoryId = CategoryId | HomeCategoryId | HenryCategoryId
+
+export type ItemOwner = 'shaun' | 'rosie' | 'shared'
+
+export type ItemKind =
+  | 'task'
+  | 'bill'
+  | 'session'
+  | 'maintenance'
+  | 'purchase'
+  | 'milestone'
+
+export type ItemSource = 'manual' | 'email' | 'nl'
+
+export interface RecurrenceRule {
+  freq: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'seasonal'
+  interval?: number
+  byMonth?: number[]
+  until?: string | null
+}
 
 export interface CustomCategory {
   id: string
@@ -54,13 +81,13 @@ export interface CategoryConfig {
 export interface HomeCategoryConfig {
   order?: HomeCategoryId[]
   hidden?: HomeCategoryId[]
-  labels?: Partial<Record<HomeCategoryId, string>>
+  labels?: Partial<Record<string, string>>
 }
 
 export interface HenryCategoryConfig {
   order?: HenryCategoryId[]
   hidden?: HenryCategoryId[]
-  labels?: Partial<Record<HenryCategoryId, string>>
+  labels?: Partial<Record<string, string>>
 }
 
 export interface GroceryList {
@@ -86,6 +113,14 @@ export interface GroceryItem {
   updated_at: string
   due_at: string | null
   note: string | null
+  owner: ItemOwner
+  item_kind: ItemKind
+  amount_cents: number | null
+  provider: string | null
+  paid_at: string | null
+  recurrence: RecurrenceRule | null
+  source?: ItemSource | null
+  inbound_email_id?: string | null
 }
 
 export interface Session {
