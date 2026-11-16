@@ -199,7 +199,7 @@ export function HomeTab({
           <SkeletonList />
         ) : items.length === 0 ? (
           <div className="px-gutter py-8">
-            <p className="font-serif text-body text-ink dark:text-ink-dark">
+            <p className="text-title text-ink dark:text-ink-dark">
               Nothing needs you right now
             </p>
             <p className="mt-1 text-footnote text-warm-gray dark:text-warm-gray-light">

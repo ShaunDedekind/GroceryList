@@ -5,12 +5,12 @@ import type { NowBucketId } from '../lib/nowBuckets'
 import { formatDueLabel } from '../lib/nowBuckets'
 import { ItemRow } from './ItemRow'
 
-const BUCKET_EMOJI: Record<NowBucketId, string> = {
-  overdue: '⏰',
-  today: '☀️',
-  this_week: '📅',
-  coming_up: '🗓️',
-  someday: '💭',
+const BUCKET_INDEX: Record<NowBucketId, string> = {
+  overdue: '01',
+  today: '02',
+  this_week: '03',
+  coming_up: '04',
+  someday: '05',
 }
 
 interface NowSectionProps {
@@ -44,19 +44,19 @@ export function NowSection({
       <button
         type="button"
         onClick={() => setCollapsed((v) => !v)}
-        className="mb-1.5 flex min-h-11 w-full items-baseline gap-1.5 px-gutter text-left text-meta font-semibold text-warm-gray dark:text-warm-gray-light"
+        className="mb-1.5 flex min-h-11 w-full items-baseline gap-2 px-gutter text-left text-warm-gray dark:text-warm-gray-light"
         aria-expanded={!collapsed}
       >
-        <span aria-hidden="true">{BUCKET_EMOJI[id]}</span>
-        <span className="font-serif text-title text-ink dark:text-ink-dark">
-          {label}
+        <span className="font-mono text-meta font-medium text-attention">
+          {BUCKET_INDEX[id]}
         </span>
-        <span>{count}</span>
-        {defaultCollapsed && (
-          <span className="ml-auto text-caption font-medium">
-            {collapsed ? 'Show' : 'Hide'}
-          </span>
-        )}
+        <span className="text-title text-ink dark:text-ink-dark">{label}</span>
+        <span className="font-mono text-caption text-warm-gray dark:text-warm-gray-light">
+          {String(count).padStart(2, '0')}
+        </span>
+        <span className="ml-auto font-mono text-caption font-medium">
+          {collapsed ? 'Show' : 'Hide'}
+        </span>
       </button>
       {!collapsed && (
         <div className="mx-gutter overflow-hidden rounded-[var(--radius-md)] bg-cream dark:bg-surface-raised">

@@ -98,7 +98,7 @@ export function groupNowItems(
     id,
     label: BUCKET_LABELS[id],
     items: buckets.get(id) ?? [],
-    defaultCollapsed: id === 'someday',
+    defaultCollapsed: false,
   })).filter((bucket) => bucket.items.length > 0)
 }
 

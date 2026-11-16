@@ -11,13 +11,13 @@ describe('getNowBucketId', () => {
 })
 
 describe('groupNowItems', () => {
-  it('collapses someday by default flag', () => {
+  it('shows someday expanded by default', () => {
     const buckets = groupNowItems(
       [testItem({ id: 'a', section: 'home', due_at: null })],
       { now: NOW },
     )
     expect(buckets[0]?.id).toBe('someday')
-    expect(buckets[0]?.defaultCollapsed).toBe(true)
+    expect(buckets[0]?.defaultCollapsed).toBe(false)
   })
 })
 

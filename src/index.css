@@ -1,40 +1,41 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Combination 229 — Japanese colour dictionary: #fa9442 #172713 #b5d1cc */
-  --color-cream: #f4f9f8;
-  --color-cream-dark: #b5d1cc;
-  --color-sage: #172713;
-  --color-sage-light: #2f4528;
-  --color-sage-dark: #0d160b;
-  --color-celebrate: #fa9442;
-  --color-attention: #fa9442;
-  --color-blush: #fbc99a;
-  --color-sky: #d5e8e4;
-  --color-sunshine: #ffd6a8;
-  --color-warm-gray: #4d5c4a;
-  --color-warm-gray-light: #7a8c78;
-  --color-surface: #172713;
-  --color-surface-raised: #24331f;
-  --color-border-dark: #3a4a35;
-  --color-ink: #172713;
-  --color-ink-dark: #e8f2ef;
-  --color-separator: #9db8b2;
-  --color-separator-dark: #3a4a35;
-  --color-error: #c2410c;
-  --color-error-bg: #fff1eb;
-  --color-error-bg-dark: #3f1d14;
-  --color-overlay: rgba(23, 39, 19, 0.4);
-  --color-line: rgba(23, 39, 19, 0.1);
-  --color-line-dark: rgba(181, 209, 204, 0.14);
-  --color-surface-soft: rgba(23, 39, 19, 0.06);
-  --color-surface-soft-dark: rgba(181, 209, 204, 0.08);
-  --color-surface-strong: rgba(244, 249, 248, 0.88);
-  --color-surface-strong-dark: rgba(23, 39, 19, 0.92);
-  --color-accent: #fa9442;
+  /* Editorial stone + signal — high contrast, not soft sage/mint */
+  --color-cream: #f7f5f0;
+  --color-cream-dark: #ddd7cb;
+  --color-sage: #0b0b0b;
+  --color-sage-light: #2a2a28;
+  --color-sage-dark: #000000;
+  --color-celebrate: #ff3d00;
+  --color-attention: #ff3d00;
+  --color-blush: #ff8a65;
+  --color-sky: #cfc9bc;
+  --color-sunshine: #ffd166;
+  --color-warm-gray: #5c5a54;
+  --color-warm-gray-light: #8a877e;
+  --color-surface: #0b0b0b;
+  --color-surface-raised: #1a1a18;
+  --color-border-dark: #2e2e2a;
+  --color-ink: #0b0b0b;
+  --color-ink-dark: #f7f5f0;
+  --color-separator: #c4beb2;
+  --color-separator-dark: #2e2e2a;
+  --color-error: #e11d48;
+  --color-error-bg: #fff1f2;
+  --color-error-bg-dark: #3f1219;
+  --color-overlay: rgba(11, 11, 11, 0.45);
+  --color-line: rgba(11, 11, 11, 0.12);
+  --color-line-dark: rgba(247, 245, 240, 0.14);
+  --color-surface-soft: rgba(11, 11, 11, 0.05);
+  --color-surface-soft-dark: rgba(247, 245, 240, 0.08);
+  --color-surface-strong: rgba(247, 245, 240, 0.92);
+  --color-surface-strong-dark: rgba(11, 11, 11, 0.92);
+  --color-accent: #ff3d00;
 
-  --font-sans: 'Aileron', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-serif: 'Bluu Next', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans: 'Archivo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: 'Archivo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --text-large-title: 2.125rem;
   --text-title: 1.375rem;
@@ -93,19 +94,19 @@ body {
 }
 
 .text-large-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--text-large-title);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
 }
 
 .text-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: var(--text-title);
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.015em;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
 }
 
 .text-headline {
@@ -135,13 +136,23 @@ select {
 }
 
 .text-meta {
+  font-family: var(--font-mono);
   font-size: var(--text-meta);
   line-height: 1.35;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .text-caption {
+  font-family: var(--font-mono);
   font-size: var(--text-caption);
   line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
 }
 
 .bg-grouped {

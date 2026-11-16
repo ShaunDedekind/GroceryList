@@ -41,8 +41,8 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
       <div className="safe-top flex min-h-vv h-vv flex-col px-gutter">
         <div className="flex flex-1 flex-col justify-end pb-8">
           <div className="relative h-24 w-28">
-            <span className="absolute left-0 top-1 h-14 w-14 rounded-full bg-blush" />
-            <span className="absolute right-1 top-0 h-11 w-11 rounded-full bg-sky" />
+            <span className="absolute left-0 top-1 h-14 w-14 rounded-full bg-attention" />
+            <span className="absolute right-1 top-0 h-11 w-11 rounded-full bg-ink dark:bg-ink-dark" />
             <span className="absolute bottom-1 left-8 h-10 w-10 rounded-full bg-sunshine" />
             <BrandMark className="absolute bottom-0 left-0 shadow-card" />
           </div>
