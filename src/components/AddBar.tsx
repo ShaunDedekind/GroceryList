@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { CategoryId, HomeCategoryId } from '../types'
+import { spring, springSnappy } from '../lib/motion'
 import { DEFAULT_CATEGORY, getCategoryEmoji } from '../constants/categories'
 import { DEFAULT_HOME_CATEGORY, getHomeCategoryEmoji } from '../constants/homeCategories'
 import { DEFAULT_HENRY_CATEGORY } from '../constants/henryCategories'
@@ -141,6 +143,8 @@ function loadRecents(section: AddBarProps['section'], listId: string): RecentEnt
 export function AddBar(props: AddBarProps) {
   const { section, listId, categories, onAdd, items = [] } = props
   const config = SECTION_CONFIG[section]
+  const reducedMotion = useReducedMotion()
+  const [expanded, setExpanded] = useState(false)
   const [text, setText] = useState('')
   const [category, setCategory] = useState<string>(config.defaultCategory)
   const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null)
@@ -285,7 +289,9 @@ export function AddBar(props: AddBarProps) {
       hapticLight()
       setJustAdded(true)
       setTimeout(() => setJustAdded(false), 450)
-      inputRef.current?.focus()
+      setExpanded(false)
+      setShowCategories(false)
+      setShowDue(false)
     } catch (e) {
       setError(
         e instanceof Error
@@ -298,6 +304,30 @@ export function AddBar(props: AddBarProps) {
       setAdding(false)
     }
   }
+
+  const collapse = useCallback(() => {
+    setExpanded(false)
+    setShowCategories(false)
+    setShowHints(false)
+    setShowDue(false)
+    setMenuOpen(false)
+    setError(null)
+  }, [])
+
+  useEffect(() => {
+    if (!expanded) return
+    const id = window.setTimeout(() => inputRef.current?.focus(), 180)
+    return () => window.clearTimeout(id)
+  }, [expanded])
+
+  useEffect(() => {
+    if (!expanded) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') collapse()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [expanded, collapse])
 
   const handleTextChange = (value: string) => {
     setText(value)
@@ -390,194 +420,254 @@ export function AddBar(props: AddBarProps) {
   return (
     <div
       ref={barRef}
-      className="relative z-30 border-t border-line bg-surface-strong px-gutter py-1.5 backdrop-blur-xl"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-30 safe-bottom px-gutter pb-3 pt-2"
     >
-      {showCategories && (
-        <CategoryPicker
-          categories={categories}
-          selected={category}
-          onSelect={handleCategoryPick}
-          layout="strip"
-          className="mb-1.5"
-        />
-      )}
-
-      {config.dueDate && showDue && (
-        <div className="mb-1.5 flex items-center gap-2">
-          <input
-            type="datetime-local"
-            value={dueLocal}
-            onChange={(e) => setDueLocal(e.target.value)}
-            className="min-h-11 min-w-0 flex-1 rounded-full border border-line bg-cream px-3 text-input outline-none focus:border-sage/40 dark:bg-surface-raised dark:text-ink-dark"
-          />
-          {dueLocal && (
-            <button
-              type="button"
-              onClick={() => setDueLocal('')}
-              className="hit-touch text-meta text-warm-gray-light"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      )}
-
-      {error && (
-        <p className="mb-2 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
-          {error}
-        </p>
-      )}
-
-      <div className="flex items-center gap-1.5">
-        <div className="relative min-w-0 flex-1">
-          <div
-            className={`flex h-11 items-center gap-1.5 rounded-full border bg-cream pl-1.5 pr-3 dark:bg-surface-raised ${
-              justAdded
-                ? 'border-sage ring-2 ring-sage/20'
-                : 'border-line focus-within:border-sage/40 focus-within:ring-2 focus-within:ring-sage/20'
-            }`}
+      <AnimatePresence mode="wait" initial={false}>
+        {!expanded ? (
+          <motion.button
+            key="fab"
+            type="button"
+            layout
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.85, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={reducedMotion ? undefined : { opacity: 0, scale: 0.9, y: 8 }}
+            transition={reducedMotion ? { duration: 0 } : spring}
+            onClick={() => setExpanded(true)}
+            className="pointer-events-auto ml-auto flex h-12 min-w-12 items-center gap-2 rounded-full bg-ink px-5 text-cream shadow-card dark:bg-attention dark:text-ink"
+            aria-label="Add item"
           >
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowCategories(!showCategories)
-                setMenuOpen(false)
-              }}
-              className={`flex h-11 min-w-11 shrink-0 items-center gap-0.5 rounded-full px-2 text-meta font-medium active:opacity-70 ${
-                isSuggested
-                  ? 'bg-sage/15 text-sage-dark dark:text-sage-light'
-                  : 'text-warm-gray dark:text-warm-gray-light'
-              }`}
-              title={isSuggested ? 'Category suggested' : `Change ${config.fieldLabel.toLowerCase()}`}
-              aria-label={`${config.fieldLabel} ${selected.label}`}
-              aria-expanded={showCategories}
-            >
-              <span>{selected.emoji}</span>
-              <Icon name="chevronDown" size="sm" />
-            </button>
+            <Icon name="add" size="md" />
+            <span className="font-mono text-meta font-semibold tracking-[0.12em]">
+              Add
+            </span>
+          </motion.button>
+        ) : (
+          <motion.div
+            key="composer"
+            layout
+            initial={reducedMotion ? false : { opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reducedMotion ? undefined : { opacity: 0, y: 16, scale: 0.98 }}
+            transition={reducedMotion ? { duration: 0 } : spring}
+            className="pointer-events-auto overflow-hidden rounded-[var(--radius-lg)] border border-line bg-surface-strong p-2 shadow-card backdrop-blur-xl"
+          >
+            {showCategories && (
+              <CategoryPicker
+                categories={categories}
+                selected={category}
+                onSelect={handleCategoryPick}
+                layout="strip"
+                className="mb-1.5"
+              />
+            )}
 
-            <input
-              ref={inputRef}
-              type="text"
-              value={text}
-              onChange={(e) => handleTextChange(e.target.value)}
-              onFocus={() => {
-                if (config.recents) setShowHints(text.trim().length >= 2)
-              }}
-              onBlur={() => setTimeout(() => setShowHints(false), 150)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  void handleSubmit()
-                }
-              }}
-              placeholder={config.placeholder}
-              enterKeyHint="done"
-              disabled={adding}
-              className="min-w-0 flex-1 bg-transparent text-input outline-none dark:text-ink-dark"
-            />
-          </div>
-
-          {showHintPanel && (
-            <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-[var(--radius-md)] border border-separator bg-cream shadow-lg dark:bg-surface-raised">
-              {hasLiveOnlyMatches && recentHints.length === 0 ? (
-                <p className="flex min-h-11 items-center px-3 text-body text-warm-gray dark:text-warm-gray-light">
-                  Already on list
-                </p>
-              ) : (
-                recentHints.map((item) => (
+            {config.dueDate && showDue && (
+              <div className="mb-1.5 flex items-center gap-2">
+                <input
+                  type="datetime-local"
+                  value={dueLocal}
+                  onChange={(e) => setDueLocal(e.target.value)}
+                  className="min-h-11 min-w-0 flex-1 rounded-full border border-line bg-cream px-3 text-input outline-none focus:border-sage/40 dark:bg-surface-raised dark:text-ink-dark"
+                />
+                {dueLocal && (
                   <button
-                    key={`${item.text}-${item.category}`}
                     type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => void handleRecentAdd(item)}
-                    disabled={adding}
-                    className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-body text-ink active:bg-cream-dark/60 disabled:opacity-50 dark:text-ink-dark dark:active:bg-surface"
+                    onClick={() => setDueLocal('')}
+                    className="hit-touch text-meta text-warm-gray-light"
                   >
-                    <span>{recentEmoji(section, item.category, categories)}</span>
-                    <span className="min-w-0 flex-1 truncate">{item.text}</span>
-                    <span className="shrink-0 text-meta font-semibold text-sage dark:text-sage-light">
-                      Add
-                    </span>
+                    Clear
                   </button>
-                ))
+                )}
+              </div>
+            )}
+
+            {error && (
+              <p className="mb-2 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
+                {error}
+              </p>
+            )}
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={collapse}
+                aria-label="Close add"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full surface-soft text-warm-gray active:opacity-70 dark:text-warm-gray-light"
+              >
+                <Icon name="close" size="sm" />
+              </button>
+
+              <div className="relative min-w-0 flex-1">
+                <div
+                  className={`flex h-11 items-center gap-1.5 rounded-full border bg-cream pl-1.5 pr-3 dark:bg-surface-raised ${
+                    justAdded
+                      ? 'border-attention ring-2 ring-attention/20'
+                      : 'border-line focus-within:border-ink/30 focus-within:ring-2 focus-within:ring-ink/10'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowCategories(!showCategories)
+                      setMenuOpen(false)
+                    }}
+                    className={`flex h-11 min-w-11 shrink-0 items-center gap-0.5 rounded-full px-2 text-meta font-medium active:opacity-70 ${
+                      isSuggested
+                        ? 'bg-attention/15 text-attention'
+                        : 'text-warm-gray dark:text-warm-gray-light'
+                    }`}
+                    title={
+                      isSuggested
+                        ? 'Category suggested'
+                        : `Change ${config.fieldLabel.toLowerCase()}`
+                    }
+                    aria-label={`${config.fieldLabel} ${selected.label}`}
+                    aria-expanded={showCategories}
+                  >
+                    <span>{selected.emoji}</span>
+                    <Icon name="chevronDown" size="sm" />
+                  </button>
+
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={text}
+                    onChange={(e) => handleTextChange(e.target.value)}
+                    onFocus={() => {
+                      if (config.recents) setShowHints(text.trim().length >= 2)
+                    }}
+                    onBlur={() => setTimeout(() => setShowHints(false), 150)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        void handleSubmit()
+                      }
+                    }}
+                    placeholder={config.placeholder}
+                    enterKeyHint="done"
+                    disabled={adding}
+                    className="min-w-0 flex-1 bg-transparent text-input outline-none dark:text-ink-dark"
+                  />
+                </div>
+
+                {showHintPanel && (
+                  <div className="absolute bottom-full left-0 right-0 z-20 mb-1 overflow-hidden rounded-[var(--radius-md)] border border-separator bg-cream shadow-lg dark:bg-surface-raised">
+                    {hasLiveOnlyMatches && recentHints.length === 0 ? (
+                      <p className="flex min-h-11 items-center px-3 text-body text-warm-gray dark:text-warm-gray-light">
+                        Already on list
+                      </p>
+                    ) : (
+                      recentHints.map((item) => (
+                        <button
+                          key={`${item.text}-${item.category}`}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => void handleRecentAdd(item)}
+                          disabled={adding}
+                          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-body text-ink active:bg-cream-dark/60 disabled:opacity-50 dark:text-ink-dark dark:active:bg-surface"
+                        >
+                          <span>
+                            {recentEmoji(section, item.category, categories)}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">
+                            {item.text}
+                          </span>
+                          <span className="shrink-0 text-meta font-semibold text-attention">
+                            Add
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {config.menu && menu && (
+                <>
+                  <button
+                    ref={moreButtonRef}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setMenuOpen((open) => !open)
+                      setShowCategories(false)
+                    }}
+                    aria-label="More actions"
+                    aria-expanded={menuOpen}
+                    aria-haspopup="menu"
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-warm-gray active:opacity-70 dark:text-warm-gray-light ${
+                      menu.reorderMode || menu.shopMode
+                        ? 'bg-sage/15 text-sage ring-2 ring-sage/30 dark:text-sage-light'
+                        : 'surface-soft'
+                    }`}
+                  >
+                    <Icon name="more" size="md" />
+                  </button>
+
+                  <ListActionMenu
+                    open={menuOpen}
+                    reorderMode={menu.reorderMode}
+                    shopMode={menu.shopMode}
+                    anchorRef={moreButtonRef}
+                    recentItems={menuRecents}
+                    getEmoji={(category) =>
+                      recentEmoji(section, category, categories)
+                    }
+                    onClose={() => setMenuOpen(false)}
+                    onPaste={menu.onPaste}
+                    onShare={menu.onShare}
+                    onStartReorder={menu.onStartReorder}
+                    onToggleShopMode={menu.onToggleShopMode}
+                    onRecentAdd={(item) => void handleRecentAdd(item)}
+                  />
+                </>
               )}
+
+              {config.dueDate && (
+                <button
+                  type="button"
+                  onClick={() => setShowDue((open) => !open)}
+                  aria-label="Set due date"
+                  aria-expanded={showDue}
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full active:opacity-70 ${
+                    dueLocal || showDue
+                      ? 'bg-attention/15 text-attention'
+                      : 'surface-soft text-warm-gray dark:text-warm-gray-light'
+                  }`}
+                >
+                  <Icon name="calendar" size="sm" />
+                </button>
+              )}
+
+              <motion.button
+                type="button"
+                onClick={() => void handleSubmit()}
+                disabled={adding || !text.trim()}
+                whileTap={reducedMotion ? undefined : { scale: 0.96 }}
+                transition={springSnappy}
+                className="flex h-11 shrink-0 items-center rounded-full bg-ink px-4 font-mono text-meta font-semibold tracking-[0.08em] text-cream disabled:opacity-40 dark:bg-attention dark:text-ink"
+              >
+                Save
+              </motion.button>
             </div>
-          )}
-        </div>
 
-        {config.menu && menu && (
-          <>
-            <button
-              ref={moreButtonRef}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setMenuOpen((open) => !open)
-                setShowCategories(false)
-              }}
-              aria-label="More actions"
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-warm-gray active:opacity-70 dark:text-warm-gray-light ${
-                menu.reorderMode || menu.shopMode
-                  ? 'bg-sage/15 text-sage ring-2 ring-sage/30 dark:text-sage-light'
-                  : 'surface-soft'
-              }`}
-            >
-              <Icon name="more" size="md" />
-            </button>
-
-            <ListActionMenu
-              open={menuOpen}
-              reorderMode={menu.reorderMode}
-              shopMode={menu.shopMode}
-              anchorRef={moreButtonRef}
-              recentItems={menuRecents}
-              getEmoji={(category) =>
-                recentEmoji(section, category, categories)
-              }
-              onClose={() => setMenuOpen(false)}
-              onPaste={menu.onPaste}
-              onShare={menu.onShare}
-              onStartReorder={menu.onStartReorder}
-              onToggleShopMode={menu.onToggleShopMode}
-              onRecentAdd={(item) => void handleRecentAdd(item)}
-            />
-          </>
+            {config.dueDate && duePreview && !showDue && (
+              <p className="mt-1 px-1 text-meta text-warm-gray-light">
+                Due {duePreview}
+                {' · '}
+                <button
+                  type="button"
+                  className="min-h-11 font-semibold text-attention"
+                  onClick={() => setShowDue(true)}
+                >
+                  Edit
+                </button>
+              </p>
+            )}
+          </motion.div>
         )}
-
-        {config.dueDate && (
-          <button
-            type="button"
-            onClick={() => setShowDue((open) => !open)}
-            aria-label="Set due date"
-            aria-expanded={showDue}
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full active:opacity-70 ${
-              dueLocal || showDue
-                ? 'bg-sage/15 text-sage'
-                : 'surface-soft text-warm-gray dark:text-warm-gray-light'
-            }`}
-          >
-            <Icon name="calendar" size="sm" />
-          </button>
-        )}
-      </div>
-
-      {config.dueDate && duePreview && !showDue && (
-        <p className="mt-1 px-1 text-meta text-warm-gray-light">
-          Due {duePreview}
-          {' · '}
-          <button
-            type="button"
-            className="min-h-11 font-semibold text-sage"
-            onClick={() => setShowDue(true)}
-          >
-            Edit
-          </button>
-        </p>
-      )}
+      </AnimatePresence>
     </div>
   )
 }

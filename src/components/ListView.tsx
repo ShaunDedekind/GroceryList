@@ -1,12 +1,11 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { AnimatePresence } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import type { Session, GroceryItem, ListSection } from '../types'
 import { useActiveTab } from '../hooks/useActiveTab'
-import { useSectionCounts } from '../hooks/useActiveTab'
 import { updateListName as updateListNameRemote } from '../lib/supabase'
+import { springSnappy } from '../lib/motion'
 import { HomeTab } from './HomeTab'
 import { HenryTab } from './HenryTab'
-import { TabBar } from './TabBar'
 import { PartnerToast } from './PartnerToast'
 import { BottomSheet } from './BottomSheet'
 import { InboxSheet } from './InboxSheet'
@@ -29,7 +28,8 @@ export function ListView({
   updateAvailable,
 }: ListViewProps) {
   const { activeTab, setActiveTab } = useActiveTab(session.listId)
-  const counts = useSectionCounts(session.listId)
+  const reducedMotion = useReducedMotion()
+  const sectionTab = activeTab === 'henry' ? 'henry' : 'home'
 
   const [partnerToast, setPartnerToast] = useState<{
     name: string
@@ -96,41 +96,49 @@ export function ListView({
 
   return (
     <div className="flex min-h-vv h-vv flex-col">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div
-          className="flex min-h-0 flex-1 flex-col"
-          hidden={activeTab !== 'home'}
-        >
-          <HomeTab
-            session={session}
-            showDone={showDoneHome}
-            onShowDoneChange={setShowDoneHome}
-            onRemoteInsert={handleRemoteInsert('home')}
-            active={activeTab === 'home'}
-            onOpenSettings={openSettings}
-          />
-        </div>
-        <div
-          className="flex min-h-0 flex-1 flex-col"
-          hidden={activeTab !== 'henry'}
-        >
-          <HenryTab
-            session={session}
-            showDone={showDoneHenry}
-            onShowDoneChange={setShowDoneHenry}
-            onRemoteInsert={handleRemoteInsert('henry')}
-            active={activeTab === 'henry'}
-            onOpenSettings={openSettings}
-          />
-        </div>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          {sectionTab === 'home' ? (
+            <motion.div
+              key="home"
+              className="flex min-h-0 flex-1 flex-col"
+              initial={reducedMotion ? false : { opacity: 0, x: -18 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reducedMotion ? undefined : { opacity: 0, x: -18 }}
+              transition={reducedMotion ? { duration: 0 } : springSnappy}
+            >
+              <HomeTab
+                session={session}
+                showDone={showDoneHome}
+                onShowDoneChange={setShowDoneHome}
+                onRemoteInsert={handleRemoteInsert('home')}
+                active
+                onOpenSettings={openSettings}
+                onTabChange={setActiveTab}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="henry"
+              className="flex min-h-0 flex-1 flex-col"
+              initial={reducedMotion ? false : { opacity: 0, x: 18 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reducedMotion ? undefined : { opacity: 0, x: 18 }}
+              transition={reducedMotion ? { duration: 0 } : springSnappy}
+            >
+              <HenryTab
+                session={session}
+                showDone={showDoneHenry}
+                onShowDoneChange={setShowDoneHenry}
+                onRemoteInsert={handleRemoteInsert('henry')}
+                active
+                onOpenSettings={openSettings}
+                onTabChange={setActiveTab}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-
-      <TabBar
-        activeTab={activeTab === 'grocery' ? 'home' : activeTab}
-        onTabChange={setActiveTab}
-        homeCount={counts.home}
-        henryCount={counts.henry}
-      />
 
       <AnimatePresence>
         {partnerToast && (

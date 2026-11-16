@@ -27,6 +27,7 @@ interface HenryTabProps {
   onRemoteInsert: (item: GroceryItem) => void
   active: boolean
   onOpenSettings: () => void
+  onTabChange: (tab: 'home' | 'henry') => void
 }
 
 export function HenryTab({
@@ -36,6 +37,7 @@ export function HenryTab({
   onRemoteInsert,
   active,
   onOpenSettings,
+  onTabChange,
 }: HenryTabProps) {
   const mainRef = useRef<HTMLElement | null>(null)
   const titleRef = useRef<HTMLDivElement | null>(null)
@@ -149,15 +151,17 @@ export function HenryTab({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <CompactTitleBar
-        title="Henry"
+        activeTab="henry"
+        onTabChange={onTabChange}
         visible={compactTitle}
         onOpenSettings={onOpenSettings}
       />
 
-      <main ref={mainRef} className="relative flex-1 overflow-y-auto pb-2">
+      <main ref={mainRef} className="relative flex-1 overflow-y-auto pb-28">
         <LargeTitle
           titleRef={titleRef}
-          title="Henry"
+          activeTab="henry"
+          onTabChange={onTabChange}
           subtitle={summary}
           onOpenSettings={onOpenSettings}
         />
@@ -204,7 +208,7 @@ export function HenryTab({
               Nothing for Henry yet
             </p>
             <p className="mt-1 text-footnote text-warm-gray dark:text-warm-gray-light">
-              Appointments, classes, and admin go here
+              Tap + ADD for appointments, classes, admin
             </p>
           </div>
         ) : (

@@ -28,6 +28,7 @@ interface HomeTabProps {
   onRemoteInsert: (item: GroceryItem) => void
   active: boolean
   onOpenSettings: () => void
+  onTabChange: (tab: 'home' | 'henry') => void
 }
 
 export function HomeTab({
@@ -37,6 +38,7 @@ export function HomeTab({
   onRemoteInsert,
   active,
   onOpenSettings,
+  onTabChange,
 }: HomeTabProps) {
   const mainRef = useRef<HTMLElement | null>(null)
   const titleRef = useRef<HTMLDivElement | null>(null)
@@ -150,14 +152,16 @@ export function HomeTab({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <CompactTitleBar
-        title="Home"
+        activeTab="home"
+        onTabChange={onTabChange}
         visible={compactTitle}
         onOpenSettings={onOpenSettings}
       />
-      <main ref={mainRef} className="relative flex-1 overflow-y-auto pb-2">
+      <main ref={mainRef} className="relative flex-1 overflow-y-auto pb-28">
         <LargeTitle
           titleRef={titleRef}
-          title="Home"
+          activeTab="home"
+          onTabChange={onTabChange}
           subtitle={summary}
           onOpenSettings={onOpenSettings}
         />
@@ -203,7 +207,7 @@ export function HomeTab({
               Nothing needs you right now
             </p>
             <p className="mt-1 text-footnote text-warm-gray dark:text-warm-gray-light">
-              Add a task, bill, or chore below
+              Tap + ADD to capture something
             </p>
           </div>
         ) : (

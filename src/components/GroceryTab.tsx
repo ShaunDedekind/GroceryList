@@ -323,7 +323,8 @@ export function GroceryTab({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <CompactTitleBar
-        title="Shop"
+        activeTab="home"
+        onTabChange={() => {}}
         visible={compactTitle}
         onOpenSettings={onOpenSettings}
       />
@@ -334,7 +335,8 @@ export function GroceryTab({
       >
         <LargeTitle
           titleRef={titleRef}
-          title="Shop"
+          activeTab="home"
+          onTabChange={() => {}}
           subtitle={subtitle}
           onOpenSettings={onOpenSettings}
         />
