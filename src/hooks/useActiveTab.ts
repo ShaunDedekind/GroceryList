@@ -59,24 +59,25 @@ function parseHashTab(): ListSection | null {
   const hash = window.location.hash.replace('#', '')
   if (hash === 'home') return 'home'
   if (hash === 'henry') return 'henry'
-  if (hash === 'shop' || hash === 'grocery') return 'grocery'
+  // Shop retired from UI — send legacy deep links to Home
+  if (hash === 'shop' || hash === 'grocery') return 'home'
   return null
 }
 
 function readStoredTab(listId: string): ListSection {
   try {
     const raw = localStorage.getItem(storageKey(listId))
-    if (raw === 'home' || raw === 'grocery' || raw === 'henry') return raw
+    if (raw === 'home' || raw === 'henry') return raw
+    if (raw === 'grocery') return 'home'
   } catch {
     // ignore
   }
-  return 'grocery'
+  return 'home'
 }
 
 function hashForTab(tab: ListSection): string {
-  if (tab === 'home') return '#home'
   if (tab === 'henry') return '#henry'
-  return '#shop'
+  return '#home'
 }
 
 export function useActiveTab(listId: string) {

@@ -3,6 +3,7 @@ import {
   DEFAULT_HENRY_CATEGORY_ORDER,
   HENRY_CATEGORY_MAP,
   isHenryCategoryId,
+  normalizeHenryCategoryId,
   type HenryCategory,
 } from '../constants/henryCategories'
 
@@ -41,9 +42,10 @@ export function mergeHenryCategoryOrder(order?: HenryCategoryId[]): HenryCategor
   const merged: HenryCategoryId[] = []
 
   for (const id of order ?? []) {
-    if (!seen.has(id)) {
-      seen.add(id)
-      merged.push(id)
+    const normalized = normalizeHenryCategoryId(id)
+    if (!seen.has(normalized)) {
+      seen.add(normalized)
+      merged.push(normalized)
     }
   }
 

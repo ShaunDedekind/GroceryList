@@ -23,7 +23,7 @@ export function useList() {
     setLoading(true)
     setError(null)
     try {
-      const list = await createList(listName ?? 'Our Grocery List')
+      const list = await createList(listName ?? 'Home OS')
       const newSession: Session = {
         listId: list.id,
         listCode: list.code,

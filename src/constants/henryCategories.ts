@@ -8,9 +8,9 @@ export interface HenryCategory {
 
 export const HENRY_CATEGORIES: HenryCategory[] = [
   { id: 'health', label: 'Health', emoji: '🩺' },
-  { id: 'appointments', label: 'Appointments', emoji: '📅' },
+  { id: 'activities', label: 'Activities', emoji: '🎈' },
   { id: 'admin', label: 'Admin', emoji: '📋' },
-  { id: 'supplies', label: 'Supplies', emoji: '🍼' },
+  { id: 'gear', label: 'Gear', emoji: '🧸' },
   { id: 'other', label: 'Other', emoji: '✨' },
 ]
 
@@ -24,14 +24,24 @@ export const DEFAULT_HENRY_CATEGORY_ORDER: HenryCategoryId[] = HENRY_CATEGORIES.
 
 export const DEFAULT_HENRY_CATEGORY: HenryCategoryId = 'other'
 
+export function normalizeHenryCategoryId(value: unknown): HenryCategoryId {
+  if (value === 'appointments') return 'activities'
+  if (value === 'supplies') return 'gear'
+  if (typeof value === 'string' && value in HENRY_CATEGORY_MAP) {
+    return value as HenryCategoryId
+  }
+  return 'other'
+}
+
 export function getHenryCategoryLabel(id: HenryCategoryId): string {
-  return HENRY_CATEGORY_MAP[id]?.label ?? 'Other'
+  return HENRY_CATEGORY_MAP[normalizeHenryCategoryId(id)]?.label ?? 'Other'
 }
 
 export function getHenryCategoryEmoji(id: HenryCategoryId): string {
-  return HENRY_CATEGORY_MAP[id]?.emoji ?? '✨'
+  return HENRY_CATEGORY_MAP[normalizeHenryCategoryId(id)]?.emoji ?? '✨'
 }
 
 export function isHenryCategoryId(value: unknown): value is HenryCategoryId {
+  if (value === 'appointments' || value === 'supplies') return true
   return typeof value === 'string' && value in HENRY_CATEGORY_MAP
 }

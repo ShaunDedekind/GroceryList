@@ -20,6 +20,7 @@ import {
   rankSuggestionHints,
   uncheckedTextKeys,
 } from '../lib/suggestionFilter'
+import { parseNaturalLanguageItem } from '../lib/parseItemClient'
 import { ListActionMenu } from './ListActionMenu'
 import { CategoryPicker } from './CategoryPicker'
 import { Icon } from './Icon'
@@ -35,6 +36,12 @@ interface AddCategory {
 interface AddExtras {
   due_at?: string | null
   note?: string | null
+  owner?: import('../types').ItemOwner
+  item_kind?: import('../types').ItemKind
+  amount_cents?: number | null
+  provider?: string | null
+  recurrence?: import('../types').RecurrenceRule | null
+  source?: import('../types').ItemSource
 }
 
 interface RecentEntry {
@@ -77,9 +84,10 @@ const SECTION_CONFIG = {
     fieldLabel: 'Category',
     fallbackLabel: 'Other',
     fallbackEmoji: '📦',
+    naturalLanguage: false,
   },
   home: {
-    placeholder: 'Fix, buy, or remember at home…',
+    placeholder: 'e.g. power bill $212 due 28th…',
     defaultCategory: DEFAULT_HOME_CATEGORY,
     useGroceryGuess: false,
     useHomeGuess: true,
@@ -89,9 +97,10 @@ const SECTION_CONFIG = {
     fieldLabel: 'Category',
     fallbackLabel: 'Other',
     fallbackEmoji: '📋',
+    naturalLanguage: true,
   },
   henry: {
-    placeholder: 'Something for Henry…',
+    placeholder: 'e.g. swim lessons Sat 9am weekly…',
     defaultCategory: DEFAULT_HENRY_CATEGORY,
     useGroceryGuess: false,
     useHomeGuess: false,
@@ -101,6 +110,7 @@ const SECTION_CONFIG = {
     fieldLabel: 'Type',
     fallbackLabel: 'Other',
     fallbackEmoji: '✨',
+    naturalLanguage: true,
   },
 } as const
 
@@ -230,7 +240,33 @@ export function AddBar(props: AddBarProps) {
       const parsedText = config.dueDate ? text.trim() : parseItemText(text).text
       if (!parsedText) return
 
-      if (section === 'henry') {
+      if (
+        (section === 'home' || section === 'henry') &&
+        'naturalLanguage' in config &&
+        config.naturalLanguage
+      ) {
+        const { parsed } = await parseNaturalLanguageItem(parsedText, section)
+        const nextCategory =
+          categories.find((entry) => entry.id === parsed.category)?.id ??
+          category
+        const manualDue = fromDatetimeLocalValue(dueLocal)
+        await onAdd(parsed.title || parsedText, nextCategory, {
+          due_at: manualDue ?? parsed.due_at ?? null,
+          note: parsed.note ?? null,
+          owner: parsed.owner,
+          item_kind: parsed.item_kind,
+          amount_cents: parsed.amount_cents ?? null,
+          provider: parsed.provider ?? null,
+          recurrence: parsed.recurrence ?? null,
+          source: 'nl',
+        })
+        if (section === 'home') {
+          persistOverride(parsed.title || parsedText, nextCategory)
+          refreshRecent()
+        }
+        setDueLocal('')
+        setShowDue(false)
+      } else if (section === 'henry') {
         await onAdd(parsedText, category, {
           due_at: fromDatetimeLocalValue(dueLocal),
         })

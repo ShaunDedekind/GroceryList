@@ -28,7 +28,7 @@ if (initialWelcome.hadJoinLink) {
 export function Welcome({ loading, error, onCreate, onJoin, onClearError }: WelcomeProps) {
   const [mode, setMode] = useState<Mode>(initialWelcome.mode)
   const [displayName, setDisplayName] = useState('')
-  const [listName, setListName] = useState('Our Grocery List')
+  const [listName, setListName] = useState('Home OS')
   const [code, setCode] = useState(initialWelcome.code)
 
   const switchMode = (next: Mode) => {
@@ -47,10 +47,10 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
             <BrandMark className="absolute bottom-0 left-0 shadow-card" />
           </div>
           <h1 className="mt-6 text-large-title text-ink dark:text-ink-dark">
-            Groceries
+            Home OS
           </h1>
           <p className="mt-2 max-w-sm text-body text-warm-gray dark:text-warm-gray-light">
-            Share a list with your partner. No account needed.
+            What needs you right now — shared with Rosie. No account needed.
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export function Welcome({ loading, error, onCreate, onJoin, onClearError }: Welc
               type="text"
               value={listName}
               onChange={(e) => setListName(e.target.value)}
-              placeholder="Our Grocery List"
+              placeholder="Home OS"
               className="mt-1.5 w-full rounded-[var(--radius-md)] border border-separator bg-grouped px-3 py-2.5 text-input outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 dark:border-border-dark dark:text-ink-dark"
             />
           </label>

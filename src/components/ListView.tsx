@@ -1,24 +1,15 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { AnimatePresence } from 'motion/react'
-import type { Session, GroceryItem, ListSection, CategoryId } from '../types'
+import type { Session, GroceryItem, ListSection } from '../types'
 import { useActiveTab } from '../hooks/useActiveTab'
 import { useSectionCounts } from '../hooks/useActiveTab'
-import { useCategoryConfig } from '../hooks/useCategoryConfig'
-import {
-  reassignGroceryCategory,
-  updateListName as updateListNameRemote,
-} from '../lib/supabase'
-import { buildCategoryConfigFromResolved } from '../lib/categoryConfig'
-import type { ResolvedCategory } from '../lib/categoryConfig'
-import { remapOverridesAwayFromCategory } from '../lib/categoryOverrides'
-import { remapRecentItemsAwayFromCategory } from '../lib/recentItems'
-import { GroceryTab } from './GroceryTab'
+import { updateListName as updateListNameRemote } from '../lib/supabase'
 import { HomeTab } from './HomeTab'
 import { HenryTab } from './HenryTab'
 import { TabBar } from './TabBar'
 import { PartnerToast } from './PartnerToast'
-import { AisleSectionsSettings } from './AisleSectionsSettings'
 import { BottomSheet } from './BottomSheet'
+import { InboxSheet } from './InboxSheet'
 
 interface ListViewProps {
   session: Session
@@ -39,8 +30,6 @@ export function ListView({
 }: ListViewProps) {
   const { activeTab, setActiveTab } = useActiveTab(session.listId)
   const counts = useSectionCounts(session.listId)
-  const { groceryResolved, visibleCategories, categoryIds, saveConfig } =
-    useCategoryConfig(session.listId, 'grocery')
 
   const [partnerToast, setPartnerToast] = useState<{
     name: string
@@ -48,7 +37,7 @@ export function ListView({
     section: ListSection
   } | null>(null)
   const [showSettings, setShowSettings] = useState(false)
-  const [showDoneGrocery, setShowDoneGrocery] = useState(false)
+  const [showInbox, setShowInbox] = useState(false)
   const [showDoneHome, setShowDoneHome] = useState(false)
   const [showDoneHenry, setShowDoneHenry] = useState(false)
   const [editName, setEditName] = useState(session.listName)
@@ -91,7 +80,7 @@ export function ListView({
   }
 
   const handleSaveSettings = async () => {
-    const name = editName.trim() || 'Our Grocery List'
+    const name = editName.trim() || 'Home OS'
     const displayName = editDisplayName.trim()
     if (!displayName) return
 
@@ -105,38 +94,9 @@ export function ListView({
     setShowSettings(false)
   }
 
-  const handleSaveAisleSections = async (next: ResolvedCategory[]) => {
-    await saveConfig(buildCategoryConfigFromResolved(next))
-  }
-
-  const handleDeleteCustomAisle = async (category: ResolvedCategory) => {
-    if (category.builtin) return
-    await reassignGroceryCategory(session.listId, category.id, 'other')
-    remapOverridesAwayFromCategory(session.listId, category.id, 'other')
-    remapRecentItemsAwayFromCategory(session.listId, category.id, 'other')
-    const next = groceryResolved.filter((entry) => entry.id !== category.id)
-    await saveConfig(buildCategoryConfigFromResolved(next))
-  }
-
   return (
     <div className="flex min-h-vv h-vv flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
-        <div
-          className="flex min-h-0 flex-1 flex-col"
-          hidden={activeTab !== 'grocery'}
-        >
-          <GroceryTab
-            session={session}
-            showDone={showDoneGrocery}
-            onShowDoneChange={setShowDoneGrocery}
-            onRemoteInsert={handleRemoteInsert('grocery')}
-            active={activeTab === 'grocery'}
-            onOpenSettings={openSettings}
-            resolved={groceryResolved}
-            visibleCategories={visibleCategories as ResolvedCategory[]}
-            categoryIds={categoryIds as CategoryId[]}
-          />
-        </div>
         <div
           className="flex min-h-0 flex-1 flex-col"
           hidden={activeTab !== 'home'}
@@ -166,9 +126,8 @@ export function ListView({
       </div>
 
       <TabBar
-        activeTab={activeTab}
+        activeTab={activeTab === 'grocery' ? 'home' : activeTab}
         onTabChange={setActiveTab}
-        groceryCount={counts.grocery}
         homeCount={counts.home}
         henryCount={counts.henry}
       />
@@ -185,76 +144,88 @@ export function ListView({
       </AnimatePresence>
 
       {showSettings && (
-      <BottomSheet onClose={() => setShowSettings(false)} maxHeightClass="max-h-vv-92">
-        <h3 className="text-headline font-semibold text-ink dark:text-ink-dark">
-          Settings
-        </h3>
+        <BottomSheet onClose={() => setShowSettings(false)} maxHeightClass="max-h-vv-92">
+          <h3 className="text-headline font-semibold text-ink dark:text-ink-dark">
+            Settings
+          </h3>
 
-        <div className="mt-4 overflow-hidden rounded-[var(--radius-md)] bg-cream-dark dark:bg-surface">
-          <label className="flex min-h-row items-center gap-3 px-4">
-            <span className="shrink-0 text-body text-ink dark:text-ink-dark">
-              List name
-            </span>
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-right text-body text-warm-gray outline-none dark:text-warm-gray-light"
-            />
-          </label>
-          <div className="ml-4 border-b border-separator" />
-          <label className="flex min-h-row items-center gap-3 px-4">
-            <span className="shrink-0 text-body text-ink dark:text-ink-dark">
-              Your name
-            </span>
-            <input
-              type="text"
-              value={editDisplayName}
-              onChange={(e) => setEditDisplayName(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-right text-body text-warm-gray outline-none dark:text-warm-gray-light"
-            />
-          </label>
-          <div className="ml-4 border-b border-separator" />
-          <AisleSectionsSettings
-            categories={groceryResolved}
-            onSave={handleSaveAisleSections}
-            onDeleteCustom={handleDeleteCustomAisle}
-          />
-          <div className="ml-4 border-b border-separator" />
+          <div className="mt-4 overflow-hidden rounded-[var(--radius-md)] bg-cream-dark dark:bg-surface">
+            <label className="flex min-h-row items-center gap-3 px-4">
+              <span className="shrink-0 text-body text-ink dark:text-ink-dark">
+                Home name
+              </span>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="min-w-0 flex-1 bg-transparent text-right text-body text-warm-gray outline-none dark:text-warm-gray-light"
+              />
+            </label>
+            <div className="ml-4 border-b border-separator" />
+            <label className="flex min-h-row items-center gap-3 px-4">
+              <span className="shrink-0 text-body text-ink dark:text-ink-dark">
+                Your name
+              </span>
+              <input
+                type="text"
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+                className="min-w-0 flex-1 bg-transparent text-right text-body text-warm-gray outline-none dark:text-warm-gray-light"
+              />
+            </label>
+            <div className="ml-4 border-b border-separator" />
+            <button
+              type="button"
+              onClick={() => {
+                setShowSettings(false)
+                setShowInbox(true)
+              }}
+              className="flex min-h-11 w-full items-center px-4 text-left text-body text-ink active:opacity-70 dark:text-ink-dark"
+            >
+              Email inbox
+            </button>
+            <div className="ml-4 border-b border-separator" />
+            <button
+              type="button"
+              onClick={handleSaveSettings}
+              disabled={!editDisplayName.trim()}
+              className="flex min-h-11 w-full items-center px-4 text-left text-body font-semibold text-sage disabled:opacity-40"
+            >
+              Save
+            </button>
+            <div className="ml-4 border-b border-separator" />
+            <button
+              type="button"
+              onClick={handleCheckForUpdate}
+              className="flex min-h-11 w-full items-center px-4 text-left text-body text-ink active:opacity-70 dark:text-ink-dark"
+            >
+              Check for updates
+            </button>
+            {updateMessage && (
+              <p className="px-4 pb-3 text-footnote text-warm-gray dark:text-warm-gray-light">
+                {updateMessage}
+              </p>
+            )}
+          </div>
+
           <button
             type="button"
-            onClick={handleSaveSettings}
-            disabled={!editDisplayName.trim()}
-            className="flex min-h-11 w-full items-center px-4 text-left text-body font-semibold text-sage disabled:opacity-40"
+            onClick={() => {
+              setShowSettings(false)
+              onLeave()
+            }}
+            className="mt-6 flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] bg-cream-dark text-body font-semibold text-error active:opacity-70 dark:bg-surface"
           >
-            Save
+            Leave Home
           </button>
-          <div className="ml-4 border-b border-separator" />
-          <button
-            type="button"
-            onClick={handleCheckForUpdate}
-            className="flex min-h-11 w-full items-center px-4 text-left text-body text-ink active:opacity-70 dark:text-ink-dark"
-          >
-            Check for updates
-          </button>
-          {updateMessage && (
-            <p className="px-4 pb-3 text-footnote text-warm-gray dark:text-warm-gray-light">
-              {updateMessage}
-            </p>
-          )}
-        </div>
+        </BottomSheet>
+      )}
 
-        <button
-          type="button"
-          onClick={() => {
-            setShowSettings(false)
-            onLeave()
-          }}
-          className="mt-6 flex min-h-11 w-full items-center justify-center rounded-[var(--radius-md)] bg-cream-dark text-body font-semibold text-error active:opacity-70 dark:bg-surface"
-        >
-          Leave List
-        </button>
-      </BottomSheet>
+      {showInbox && (
+        <InboxSheet
+          session={session}
+          onClose={() => setShowInbox(false)}
+        />
       )}
     </div>
   )

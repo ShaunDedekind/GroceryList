@@ -4,9 +4,18 @@ import type {
   GroceryItem,
   HomeCategoryId,
   ItemCategoryId,
+  ItemKind,
+  ItemOwner,
+  ItemSource,
   ListSection,
+  RecurrenceRule,
   Session,
 } from '../types'
+import { normalizeHomeCategoryId } from '../constants/homeCategories'
+import { normalizeHenryCategoryId } from '../constants/henryCategories'
+import { inferOwnerFromName, normalizeOwner } from '../lib/ownership'
+import { nextDueAt } from '../lib/recurrence'
+import { syncCalendarForItem } from '../lib/calendarClient'
 import {
   applyOrderUpdates,
   nextSortOrder,
@@ -31,12 +40,45 @@ async function loadItems(listId: string, section: ListSection) {
     .order('created_at', { ascending: true })
 }
 
+function normalizeItemKind(value: unknown): ItemKind {
+  if (
+    value === 'task' ||
+    value === 'bill' ||
+    value === 'session' ||
+    value === 'maintenance' ||
+    value === 'purchase' ||
+    value === 'milestone'
+  ) {
+    return value
+  }
+  return 'task'
+}
+
+function normalizeCategoryForSection(
+  section: ListSection,
+  category: ItemCategoryId,
+): ItemCategoryId {
+  if (section === 'home') return normalizeHomeCategoryId(category)
+  if (section === 'henry') return normalizeHenryCategoryId(category)
+  return category
+}
+
 function normalizeItem(raw: GroceryItem): GroceryItem {
+  const section = normalizeItemSection(raw.section)
   return {
     ...raw,
-    section: normalizeItemSection(raw.section),
+    section,
+    category: normalizeCategoryForSection(section, raw.category),
     due_at: raw.due_at ?? null,
     note: raw.note ?? null,
+    owner: normalizeOwner(raw.owner) || inferOwnerFromName(raw.added_by),
+    item_kind: normalizeItemKind(raw.item_kind),
+    amount_cents: raw.amount_cents ?? null,
+    provider: raw.provider ?? null,
+    paid_at: raw.paid_at ?? null,
+    recurrence: (raw.recurrence as RecurrenceRule | null) ?? null,
+    source: (raw.source as ItemSource | null | undefined) ?? 'manual',
+    inbound_email_id: raw.inbound_email_id ?? null,
   }
 }
 
@@ -220,12 +262,24 @@ export function useItems(session: Session, options: UseItemsOptions) {
     async (
       text: string,
       category: ItemCategoryId,
-      extras?: { due_at?: string | null; note?: string | null },
+      extras?: {
+        due_at?: string | null
+        note?: string | null
+        owner?: ItemOwner
+        item_kind?: ItemKind
+        amount_cents?: number | null
+        provider?: string | null
+        recurrence?: RecurrenceRule | null
+        source?: ItemSource
+        inbound_email_id?: string | null
+      },
     ) => {
       if (!text.trim()) return
 
       const displayName = getSession()?.displayName ?? session.displayName
       const sort_order = nextSortOrder(items, category)
+      const owner =
+        extras?.owner ?? inferOwnerFromName(displayName)
 
       const { data, error: insertError } = await supabase
         .from('items')
@@ -238,6 +292,13 @@ export function useItems(session: Session, options: UseItemsOptions) {
           sort_order,
           due_at: extras?.due_at ?? null,
           note: extras?.note?.trim() || null,
+          owner,
+          item_kind: extras?.item_kind ?? 'task',
+          amount_cents: extras?.amount_cents ?? null,
+          provider: extras?.provider ?? null,
+          recurrence: extras?.recurrence ?? null,
+          source: extras?.source ?? 'manual',
+          inbound_email_id: extras?.inbound_email_id ?? null,
         })
         .select()
         .single()
@@ -267,56 +328,88 @@ export function useItems(session: Session, options: UseItemsOptions) {
     [addItem],
   )
 
-  const toggleItem = useCallback(async (id: string, checked: boolean) => {
-    const generation = (checkGenerationRef.current.get(id) ?? 0) + 1
-    checkGenerationRef.current.set(id, generation)
-    pendingChecksRef.current.set(id, checked)
-    syncGenerationRef.current += 1
-
-    setItems((prev) =>
-      sortItems(
-        prev.map((item) => (item.id === id ? { ...item, checked } : item)),
-      ),
-    )
-
-    try {
-      const { data, error: updateError } = await supabase
-        .from('items')
-        .update({ checked })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (checkGenerationRef.current.get(id) !== generation) return
-
-      if (updateError) {
-        pendingChecksRef.current.delete(id)
-        setItems((prev) =>
-          sortItems(
-            prev.map((item) =>
-              item.id === id ? { ...item, checked: !checked } : item,
-            ),
-          ),
-        )
-        throw updateError
-      }
-
-      if (data) {
-        const saved = normalizeItem(data as GroceryItem)
-        setItems((prev) => {
-          if (checkGenerationRef.current.get(id) !== generation) return prev
-          pendingChecksRef.current.delete(id)
-          return sortItems(
-            prev.map((item) => (item.id === id ? saved : item)),
-          )
-        })
-      } else {
-        pendingChecksRef.current.delete(id)
-      }
-    } finally {
+  const toggleItem = useCallback(
+    async (id: string, checked: boolean) => {
+      const generation = (checkGenerationRef.current.get(id) ?? 0) + 1
+      checkGenerationRef.current.set(id, generation)
+      pendingChecksRef.current.set(id, checked)
       syncGenerationRef.current += 1
-    }
-  }, [])
+
+      const current = items.find((entry) => entry.id === id)
+
+      setItems((prev) =>
+        sortItems(
+          prev.map((item) => (item.id === id ? { ...item, checked } : item)),
+        ),
+      )
+
+      try {
+        const { data, error: updateError } = await supabase
+          .from('items')
+          .update({
+            checked,
+            paid_at:
+              checked && current?.item_kind === 'bill'
+                ? new Date().toISOString()
+                : current?.paid_at ?? null,
+          })
+          .eq('id', id)
+          .select()
+          .single()
+
+        if (checkGenerationRef.current.get(id) !== generation) return
+
+        if (updateError) {
+          pendingChecksRef.current.delete(id)
+          setItems((prev) =>
+            sortItems(
+              prev.map((item) =>
+                item.id === id ? { ...item, checked: !checked } : item,
+              ),
+            ),
+          )
+          throw updateError
+        }
+
+        if (data) {
+          const saved = normalizeItem(data as GroceryItem)
+          setItems((prev) => {
+            if (checkGenerationRef.current.get(id) !== generation) return prev
+            pendingChecksRef.current.delete(id)
+            return sortItems(
+              prev.map((item) => (item.id === id ? saved : item)),
+            )
+          })
+
+          if (checked && current?.recurrence) {
+            const nextDue = nextDueAt(current.due_at, current.recurrence)
+            if (nextDue) {
+              await addItem(current.text, current.category, {
+                due_at: nextDue,
+                note: current.note,
+                owner: current.owner,
+                item_kind: current.item_kind,
+                amount_cents: current.amount_cents,
+                provider: current.provider,
+                recurrence: current.recurrence,
+                source: current.source ?? 'manual',
+              })
+            }
+          }
+
+          void syncCalendarForItem(
+            checked || !saved.due_at ? 'delete' : 'upsert',
+            saved,
+          )
+        } else {
+          pendingChecksRef.current.delete(id)
+        }
+      } finally {
+        syncGenerationRef.current += 1
+      }
+    },
+    [items, addItem],
+  )
 
   const updateItem = useCallback(
     async (
@@ -326,21 +419,34 @@ export function useItems(session: Session, options: UseItemsOptions) {
         category?: ItemCategoryId
         due_at?: string | null
         note?: string | null
+        owner?: ItemOwner
+        item_kind?: ItemKind
+        amount_cents?: number | null
+        provider?: string | null
+        paid_at?: string | null
+        recurrence?: RecurrenceRule | null
+        checked?: boolean
       },
     ) => {
       const trimmedText = updates.text?.trim()
-      const patch: {
-        text?: string
-        category?: ItemCategoryId
-        due_at?: string | null
-        note?: string | null
-      } = {}
+      const patch: Record<string, unknown> = {}
       if (trimmedText) patch.text = trimmedText
       if (updates.category) patch.category = updates.category
       if (updates.due_at !== undefined) patch.due_at = updates.due_at
       if (updates.note !== undefined) {
         patch.note = updates.note?.trim() || null
       }
+      if (updates.owner) patch.owner = updates.owner
+      if (updates.item_kind) patch.item_kind = updates.item_kind
+      if (updates.amount_cents !== undefined) {
+        patch.amount_cents = updates.amount_cents
+      }
+      if (updates.provider !== undefined) patch.provider = updates.provider
+      if (updates.paid_at !== undefined) patch.paid_at = updates.paid_at
+      if (updates.recurrence !== undefined) {
+        patch.recurrence = updates.recurrence
+      }
+      if (updates.checked !== undefined) patch.checked = updates.checked
       if (Object.keys(patch).length === 0) return
 
       const previous = items

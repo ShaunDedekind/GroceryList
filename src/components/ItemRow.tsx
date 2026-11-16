@@ -10,6 +10,7 @@ import {
   animate,
 } from 'motion/react'
 import type { GroceryItem } from '../types'
+import type { NowBucketId } from '../lib/nowBuckets'
 import { parseItemDisplay } from '../lib/itemNote'
 import { UserBadge } from './UserBadge'
 import { Icon } from './Icon'
@@ -28,6 +29,7 @@ interface ItemRowProps {
   showSeparator?: boolean
   dueLabel?: string | null
   typeChip?: { emoji: string; label: string } | null
+  bucketId?: NowBucketId | null
 }
 
 const LONG_PRESS_MS = 500
@@ -47,7 +49,7 @@ function DragHandle(props: HTMLAttributes<HTMLButtonElement>) {
 
 export function ItemRow({
   item,
-  currentUserName,
+  currentUserName: _currentUserName,
   onToggle,
   onDelete,
   onEdit,
@@ -56,7 +58,9 @@ export function ItemRow({
   showSeparator = true,
   dueLabel = null,
   typeChip = null,
+  bucketId = null,
 }: ItemRowProps) {
+  void _currentUserName
   const reducedMotion = useReducedMotion()
   const rowRef = useRef<HTMLDivElement | null>(null)
   const [rowWidth, setRowWidth] = useState(360)
@@ -195,24 +199,29 @@ export function ItemRow({
               >
                 {title}
               </span>
-              {(note || dueLabel || typeChip) && (
+              {(note || dueLabel || typeChip || item.source === 'email') && (
                 <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-meta text-warm-gray dark:text-warm-gray-light">
-                  {typeChip && (
+                  {typeChip && typeChip.label.toLowerCase() !== 'other' && (
                     <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-cream-dark px-1.5 py-0.5 font-medium text-ink dark:bg-surface dark:text-ink-dark">
                       <span aria-hidden="true">{typeChip.emoji}</span>
                       {typeChip.label}
                     </span>
                   )}
-                  {dueLabel && <span className="shrink-0">{dueLabel}</span>}
+                  {dueLabel &&
+                    !(bucketId === 'someday' && dueLabel === 'Someday') && (
+                      <span className="shrink-0">{dueLabel}</span>
+                    )}
+                  {item.source === 'email' && (
+                    <span className="shrink-0 text-caption font-medium text-sage">
+                      from email
+                    </span>
+                  )}
                   {note && <span className="min-w-0 truncate">{note}</span>}
                 </span>
               )}
             </button>
 
-            <UserBadge
-              name={item.added_by}
-              isCurrentUser={item.added_by === currentUserName}
-            />
+            <UserBadge owner={item.owner} name={item.added_by} />
 
             {!isTouch && (
               <button

@@ -3,23 +3,23 @@ import type { Session, GroceryItem, HomeCategoryId } from '../types'
 import {
   getHomeCategoryEmoji,
   getHomeCategoryLabel,
-  isHomeCategoryId,
+  normalizeHomeCategoryId,
 } from '../constants/homeCategories'
 import { saveHomeOverride } from '../lib/homeCategoryOverrides'
 import { useItems } from '../hooks/useItems'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
 import type { ResolvedHomeCategory } from '../lib/homeCategoryConfig'
-import { sortItemsInCategory } from '../lib/itemOrder'
+import { buildNowSummary, groupNowItems } from '../lib/nowBuckets'
 import { parseItemDisplay } from '../lib/itemNote'
 import { useLingeringChecked } from '../hooks/useLingeringChecked'
 import { useUndoAction } from '../hooks/useUndoAction'
-import { CategorySection } from './CategorySection'
+import { NowSection } from './NowSection'
 import { AddBar } from './AddBar'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
 import { UndoToast } from './UndoToast'
 import { CompactTitleBar, LargeTitle } from './ScreenHeader'
-import { listCountLabel, useCompactTitle } from '../hooks/useCompactTitle'
+import { useCompactTitle } from '../hooks/useCompactTitle'
 
 interface HomeTabProps {
   session: Session
@@ -55,49 +55,60 @@ export function HomeTab({
   const { visibleCategories } = useCategoryConfig(session.listId, 'home')
 
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
-
-  const grouped = useMemo(() => {
-    const map = new Map<HomeCategoryId, GroceryItem[]>()
-    for (const cat of visibleCategories as ResolvedHomeCategory[]) {
-      map.set(cat.id, sortItemsInCategory(items, cat.id))
-    }
-    for (const item of items) {
-      const id = isHomeCategoryId(item.category) ? item.category : 'other'
-      if (!map.has(id)) {
-        map.set(id, sortItemsInCategory(items, id))
-      }
-    }
-    return map
-  }, [items, visibleCategories])
-
-  const uncheckedCount = items.filter((i) => !i.checked).length
-  const checkedCount = items.filter((i) => i.checked).length
-  const subtitle = listCountLabel(uncheckedCount, 'todo', 'All caught up', loading)
-
-  const visibleSections = (visibleCategories as ResolvedHomeCategory[]).filter(
-    (cat) => {
-      const catItems = grouped.get(cat.id) ?? []
-      return catItems.some((item) => {
-        if (undo.hiddenIds.has(item.id)) return false
-        if (showDone) return true
-        return !item.checked || lingeringIds.has(item.id)
-      })
-    },
+  const [categoryFilter, setCategoryFilter] = useState<HomeCategoryId | 'all'>(
+    'all',
   )
+
+  const buckets = useMemo(() => {
+    const source = items
+      .filter((item) => !undo.hiddenIds.has(item.id))
+      .filter((item) =>
+        categoryFilter === 'all'
+          ? true
+          : normalizeHomeCategoryId(item.category) === categoryFilter,
+      )
+      .map((item) =>
+        lingeringIds.has(item.id) && item.checked
+          ? { ...item, checked: false }
+          : item,
+      )
+    const grouped = groupNowItems(source, { showDone })
+    const byId = new Map(items.map((item) => [item.id, item]))
+    return grouped.map((bucket) => ({
+      ...bucket,
+      items: bucket.items
+        .map((item) => byId.get(item.id) ?? item)
+        .filter((item) => !undo.hiddenIds.has(item.id)),
+    }))
+  }, [items, showDone, undo.hiddenIds, lingeringIds, categoryFilter])
+
+  const checkedCount = items.filter((i) => i.checked).length
+  const summary = loading ? 'Loading…' : buildNowSummary(items)
 
   const handleSaveItem = async (
     id: string,
-    payload: { text: string; category: string },
+    payload: {
+      text: string
+      category: string
+      due_at?: string | null
+      note?: string | null
+    },
   ) => {
     await updateItem(id, {
       text: payload.text,
       category: payload.category as HomeCategoryId,
+      due_at: payload.due_at,
+      note: payload.note,
     })
   }
 
   const handleAdd = useCallback(
-    async (text: string, category: HomeCategoryId) => {
-      await addItem(text, category)
+    async (
+      text: string,
+      category: HomeCategoryId,
+      extras?: Parameters<typeof addItem>[2],
+    ) => {
+      await addItem(text, category, extras)
     },
     [addItem],
   )
@@ -128,30 +139,12 @@ export function HomeTab({
     [items, undo, deleteItem],
   )
 
-  const renderCategory = (cat: ResolvedHomeCategory) => {
-    const catItems = grouped.get(cat.id) ?? []
-    const filtered = catItems.filter((item) => {
-      if (undo.hiddenIds.has(item.id)) return false
-      if (showDone) return true
-      return !item.checked || lingeringIds.has(item.id)
-    })
-
-    if (filtered.length === 0) return null
-
-    return (
-      <CategorySection
-        key={cat.id}
-        categoryId={cat.id}
-        categoryLabel={cat.label}
-        categoryEmoji={cat.emoji}
-        items={filtered}
-        currentUserName={session.displayName}
-        onToggle={handleToggle}
-        onDelete={requestDelete}
-        onEdit={setEditingItem}
-        reorderMode={false}
-      />
-    )
+  const typeChipFor = (item: GroceryItem) => {
+    const id = normalizeHomeCategoryId(item.category)
+    return {
+      emoji: getHomeCategoryEmoji(id),
+      label: getHomeCategoryLabel(id),
+    }
   }
 
   return (
@@ -161,16 +154,41 @@ export function HomeTab({
         visible={compactTitle}
         onOpenSettings={onOpenSettings}
       />
-      <main
-        ref={mainRef}
-        className="relative flex-1 overflow-y-auto pb-2"
-      >
+      <main ref={mainRef} className="relative flex-1 overflow-y-auto pb-2">
         <LargeTitle
           titleRef={titleRef}
           title="Home"
-          subtitle={subtitle}
+          subtitle={summary}
           onOpenSettings={onOpenSettings}
         />
+
+        <div className="mb-3 flex gap-2 overflow-x-auto px-gutter pb-1">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('all')}
+            className={`min-h-11 shrink-0 rounded-full px-3 text-meta font-medium ${
+              categoryFilter === 'all'
+                ? 'bg-sage text-cream'
+                : 'bg-cream-dark text-ink dark:bg-surface dark:text-ink-dark'
+            }`}
+          >
+            All
+          </button>
+          {(visibleCategories as ResolvedHomeCategory[]).map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`min-h-11 shrink-0 rounded-full px-3 text-meta font-medium ${
+                categoryFilter === cat.id
+                  ? 'bg-sage text-cream'
+                  : 'bg-cream-dark text-ink dark:bg-surface dark:text-ink-dark'
+              }`}
+            >
+              <span aria-hidden="true">{cat.emoji}</span> {cat.label}
+            </button>
+          ))}
+        </div>
 
         {error && (
           <p className="mx-gutter mb-3 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
@@ -181,14 +199,29 @@ export function HomeTab({
           <SkeletonList />
         ) : items.length === 0 ? (
           <div className="px-gutter py-8">
-            <p className="font-serif text-body text-ink dark:text-ink-dark">Nothing to do</p>
+            <p className="font-serif text-body text-ink dark:text-ink-dark">
+              Nothing needs you right now
+            </p>
             <p className="mt-1 text-footnote text-warm-gray dark:text-warm-gray-light">
-              Add a task in the bar below
+              Add a task, bill, or chore below
             </p>
           </div>
         ) : (
           <>
-            {visibleSections.map((cat) => renderCategory(cat))}
+            {buckets.map((bucket) => (
+              <NowSection
+                key={bucket.id}
+                id={bucket.id}
+                label={bucket.label}
+                items={bucket.items}
+                defaultCollapsed={bucket.defaultCollapsed}
+                currentUserName={session.displayName}
+                onToggle={handleToggle}
+                onDelete={requestDelete}
+                onEdit={setEditingItem}
+                typeChipFor={typeChipFor}
+              />
+            ))}
             {checkedCount > 0 && (
               <div className="mt-2 flex items-center gap-3 px-gutter pb-2">
                 <button
@@ -211,7 +244,9 @@ export function HomeTab({
         listId={session.listId}
         categories={visibleCategories as ResolvedHomeCategory[]}
         items={items}
-        onAdd={(text, category) => handleAdd(text, category as HomeCategoryId)}
+        onAdd={(text, category, extras) =>
+          handleAdd(text, category as HomeCategoryId, extras)
+        }
       />
 
       {editingItem && (
@@ -226,6 +261,7 @@ export function HomeTab({
           onSaveOverride={(listId, text, cat) =>
             saveHomeOverride(listId, text, cat as HomeCategoryId)
           }
+          showScheduleFields
         />
       )}
     </div>

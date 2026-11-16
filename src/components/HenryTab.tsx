@@ -1,29 +1,24 @@
 import { useRef, useState, useMemo, useCallback } from 'react'
-import { AnimatePresence } from 'motion/react'
 import type { Session, GroceryItem, HenryCategoryId } from '../types'
 import {
   getHenryCategoryEmoji,
   getHenryCategoryLabel,
-  isHenryCategoryId,
+  normalizeHenryCategoryId,
 } from '../constants/henryCategories'
 import { useItems } from '../hooks/useItems'
 import { useCategoryConfig } from '../hooks/useCategoryConfig'
 import type { ResolvedHenryCategory } from '../lib/henryCategoryConfig'
-import {
-  formatDueLabel,
-  groupHenryItems,
-  type HenryBucketId,
-} from '../lib/henryBuckets'
+import { buildNowSummary, groupNowItems } from '../lib/nowBuckets'
 import { parseItemDisplay } from '../lib/itemNote'
 import { useLingeringChecked } from '../hooks/useLingeringChecked'
 import { useUndoAction } from '../hooks/useUndoAction'
-import { ItemRow } from './ItemRow'
+import { NowSection } from './NowSection'
 import { AddBar } from './AddBar'
 import { ItemEditSheet } from './ItemEditSheet'
 import { SkeletonList } from './SkeletonList'
 import { UndoToast } from './UndoToast'
 import { CompactTitleBar, LargeTitle } from './ScreenHeader'
-import { listCountLabel, useCompactTitle } from '../hooks/useCompactTitle'
+import { useCompactTitle } from '../hooks/useCompactTitle'
 
 interface HenryTabProps {
   session: Session
@@ -32,14 +27,6 @@ interface HenryTabProps {
   onRemoteInsert: (item: GroceryItem) => void
   active: boolean
   onOpenSettings: () => void
-}
-
-const BUCKET_EMOJI: Record<HenryBucketId, string> = {
-  overdue: '⏰',
-  today: '☀️',
-  this_week: '📅',
-  later: '🗓️',
-  someday: '💭',
 }
 
 export function HenryTab({
@@ -67,16 +54,24 @@ export function HenryTab({
   const { visibleCategories } = useCategoryConfig(session.listId, 'henry')
 
   const [editingItem, setEditingItem] = useState<GroceryItem | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState<HenryCategoryId | 'all'>(
+    'all',
+  )
 
   const buckets = useMemo(() => {
     const source = items
       .filter((item) => !undo.hiddenIds.has(item.id))
+      .filter((item) =>
+        categoryFilter === 'all'
+          ? true
+          : normalizeHenryCategoryId(item.category) === categoryFilter,
+      )
       .map((item) =>
         lingeringIds.has(item.id) && item.checked
           ? { ...item, checked: false }
           : item,
       )
-    const grouped = groupHenryItems(source, { showDone })
+    const grouped = groupNowItems(source, { showDone })
     const byId = new Map(items.map((item) => [item.id, item]))
     return grouped.map((bucket) => ({
       ...bucket,
@@ -84,10 +79,10 @@ export function HenryTab({
         .map((item) => byId.get(item.id) ?? item)
         .filter((item) => !undo.hiddenIds.has(item.id)),
     }))
-  }, [items, showDone, undo.hiddenIds, lingeringIds])
-  const uncheckedCount = items.filter((i) => !i.checked).length
+  }, [items, showDone, undo.hiddenIds, lingeringIds, categoryFilter])
+
   const checkedCount = items.filter((i) => i.checked).length
-  const subtitle = listCountLabel(uncheckedCount, 'todo', 'All clear', loading)
+  const summary = loading ? 'Loading…' : buildNowSummary(items)
 
   const handleToggle = useCallback(
     (id: string, checked: boolean) => {
@@ -119,7 +114,7 @@ export function HenryTab({
     async (
       text: string,
       category: HenryCategoryId,
-      extras?: { due_at?: string | null; note?: string | null },
+      extras?: Parameters<typeof addItem>[2],
     ) => {
       await addItem(text, category, extras)
     },
@@ -144,7 +139,7 @@ export function HenryTab({
   }
 
   const typeChipFor = (item: GroceryItem) => {
-    const id = isHenryCategoryId(item.category) ? item.category : 'other'
+    const id = normalizeHenryCategoryId(item.category)
     return {
       emoji: getHenryCategoryEmoji(id),
       label: getHenryCategoryLabel(id),
@@ -159,16 +154,41 @@ export function HenryTab({
         onOpenSettings={onOpenSettings}
       />
 
-      <main
-        ref={mainRef}
-        className="relative flex-1 overflow-y-auto pb-2"
-      >
+      <main ref={mainRef} className="relative flex-1 overflow-y-auto pb-2">
         <LargeTitle
           titleRef={titleRef}
           title="Henry"
-          subtitle={subtitle}
+          subtitle={summary}
           onOpenSettings={onOpenSettings}
         />
+
+        <div className="mb-3 flex gap-2 overflow-x-auto px-gutter pb-1">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('all')}
+            className={`min-h-11 shrink-0 rounded-full px-3 text-meta font-medium ${
+              categoryFilter === 'all'
+                ? 'bg-sage text-cream'
+                : 'bg-cream-dark text-ink dark:bg-surface dark:text-ink-dark'
+            }`}
+          >
+            All
+          </button>
+          {(visibleCategories as ResolvedHenryCategory[]).map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`min-h-11 shrink-0 rounded-full px-3 text-meta font-medium ${
+                categoryFilter === cat.id
+                  ? 'bg-sage text-cream'
+                  : 'bg-cream-dark text-ink dark:bg-surface dark:text-ink-dark'
+              }`}
+            >
+              <span aria-hidden="true">{cat.emoji}</span> {cat.label}
+            </button>
+          ))}
+        </div>
 
         {error && (
           <p className="mx-gutter mb-3 rounded-[var(--radius-md)] bg-error-banner px-3 py-2 text-footnote">
@@ -184,42 +204,25 @@ export function HenryTab({
               Nothing for Henry yet
             </p>
             <p className="mt-1 text-footnote text-warm-gray dark:text-warm-gray-light">
-              Add something in the bar below
+              Appointments, classes, and admin go here
             </p>
           </div>
         ) : (
           <>
-            {buckets.map((bucket) => {
-              const count =
-                bucket.items.filter((item) => !item.checked).length ||
-                bucket.items.length
-              return (
-                <section key={bucket.id} className="mb-6">
-                  <h2 className="mb-1.5 flex items-baseline gap-1.5 px-gutter text-meta font-semibold text-warm-gray dark:text-warm-gray-light">
-                    <span aria-hidden="true">{BUCKET_EMOJI[bucket.id]}</span>
-                    <span>{bucket.label}</span>
-                    <span>{count}</span>
-                  </h2>
-                  <div className="mx-gutter overflow-hidden rounded-[var(--radius-md)] bg-cream dark:bg-surface-raised">
-                    <AnimatePresence initial={false}>
-                      {bucket.items.map((item, index) => (
-                        <ItemRow
-                          key={item.id}
-                          item={item}
-                          currentUserName={session.displayName}
-                          onToggle={handleToggle}
-                          onDelete={requestDelete}
-                          onEdit={setEditingItem}
-                          showSeparator={index < bucket.items.length - 1}
-                          dueLabel={formatDueLabel(item.due_at)}
-                          typeChip={typeChipFor(item)}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </section>
-              )
-            })}
+            {buckets.map((bucket) => (
+              <NowSection
+                key={bucket.id}
+                id={bucket.id}
+                label={bucket.label}
+                items={bucket.items}
+                defaultCollapsed={bucket.defaultCollapsed}
+                currentUserName={session.displayName}
+                onToggle={handleToggle}
+                onDelete={requestDelete}
+                onEdit={setEditingItem}
+                typeChipFor={typeChipFor}
+              />
+            ))}
 
             {checkedCount > 0 && (
               <div className="mt-2 flex items-center gap-3 px-gutter pb-2">
@@ -242,6 +245,7 @@ export function HenryTab({
         section="henry"
         listId={session.listId}
         categories={visibleCategories as ResolvedHenryCategory[]}
+        items={items}
         onAdd={(text, category, extras) =>
           handleAdd(text, category as HenryCategoryId, extras)
         }

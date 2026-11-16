@@ -5,7 +5,6 @@ import { HapticSwitch } from './HapticSwitch'
 interface TabBarProps {
   activeTab: ListSection
   onTabChange: (tab: ListSection) => void
-  groceryCount: number
   homeCount: number
   henryCount: number
 }
@@ -13,18 +12,16 @@ interface TabBarProps {
 export function TabBar({
   activeTab,
   onTabChange,
-  groceryCount,
   homeCount,
   henryCount,
 }: TabBarProps) {
   const tabs: {
-    id: ListSection
+    id: Extract<ListSection, 'home' | 'henry'>
     label: string
-    icon: 'cart' | 'home' | 'henry'
-    iconFilled: 'cartFilled' | 'homeFilled' | 'henryFilled'
+    icon: 'home' | 'henry'
+    iconFilled: 'homeFilled' | 'henryFilled'
     count: number
   }[] = [
-    { id: 'grocery', label: 'Shop', icon: 'cart', iconFilled: 'cartFilled', count: groceryCount },
     { id: 'home', label: 'Home', icon: 'home', iconFilled: 'homeFilled', count: homeCount },
     { id: 'henry', label: 'Henry', icon: 'henry', iconFilled: 'henryFilled', count: henryCount },
   ]
@@ -32,7 +29,7 @@ export function TabBar({
   return (
     <nav
       className="safe-bottom sticky bottom-0 z-20 px-3 pt-1"
-      aria-label="List sections"
+      aria-label="Home OS sections"
     >
       <div className="flex rounded-full border border-line bg-surface-strong p-1 shadow-card backdrop-blur-xl">
         {tabs.map((tab) => {
@@ -50,7 +47,7 @@ export function TabBar({
               <span className="relative flex h-6 w-6 items-center justify-center" aria-hidden="true">
                 <Icon name={selected ? tab.iconFilled : tab.icon} size="lg" />
                 {tab.count > 0 && (
-                  <span className="absolute -right-2.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blush px-1 text-caption font-semibold leading-none text-ink">
+                  <span className="absolute -right-2.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-attention px-1 text-caption font-semibold leading-none text-ink">
                     {tab.count > 99 ? '99+' : tab.count}
                   </span>
                 )}

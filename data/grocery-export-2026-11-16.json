@@ -1,0 +1,6 @@
+{
+  "exported_at": "2026-11-16T00:00:00.000Z",
+  "note": "Shop UI removed in Home OS Phase 1. Grocery rows remain in Supabase items where section='grocery'. Re-run scripts/export-grocery.mjs against a live list to refresh this file.",
+  "section": "grocery",
+  "items": []
+}

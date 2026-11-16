@@ -34,7 +34,7 @@ describe('resolveHomeCategories', () => {
     const resolved = resolveHomeCategories({ order: ['maintenance', 'cleaning'] })
     expect(resolved[0]?.id).toBe('maintenance')
     expect(resolved[1]?.id).toBe('cleaning')
-    expect(resolved).toHaveLength(8)
+    expect(resolved).toHaveLength(10)
   })
 
   it('applies hidden and custom labels', () => {
@@ -56,7 +56,7 @@ describe('mergeHomeCategoryOrder', () => {
     const order = mergeHomeCategoryOrder(['garden', 'kids'])
     expect(order.slice(0, 2)).toEqual(['garden', 'kids'])
     expect(order).toContain('other')
-    expect(order).toHaveLength(8)
+    expect(order).toHaveLength(10)
   })
 })
 

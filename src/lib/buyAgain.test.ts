@@ -22,6 +22,12 @@ function item(
     updated_at,
     due_at: null,
     note: null,
+    owner: 'shared',
+    item_kind: 'task',
+    amount_cents: null,
+    provider: null,
+    paid_at: null,
+    recurrence: null,
   }
 }
 

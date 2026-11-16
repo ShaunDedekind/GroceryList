@@ -3,6 +3,7 @@ import {
   HOME_CATEGORY_MAP,
   DEFAULT_HOME_CATEGORY_ORDER,
   isHomeCategoryId,
+  normalizeHomeCategoryId,
   type HomeCategory,
 } from '../constants/homeCategories'
 import type { HomeCategoryConfig } from '../types'
@@ -42,9 +43,10 @@ export function mergeHomeCategoryOrder(order?: HomeCategoryId[]): HomeCategoryId
   const merged: HomeCategoryId[] = []
 
   for (const id of order ?? []) {
-    if (!seen.has(id)) {
-      seen.add(id)
-      merged.push(id)
+    const normalized = normalizeHomeCategoryId(id)
+    if (!seen.has(normalized)) {
+      seen.add(normalized)
+      merged.push(normalized)
     }
   }
 

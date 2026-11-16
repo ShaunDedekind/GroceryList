@@ -18,12 +18,20 @@ function item(
     category: 'health',
     text: id,
     checked,
-    added_by: 'Simon',
+    added_by: 'Shaun',
     sort_order: 0,
     created_at: '2024-01-01T00:00:00.000Z',
     updated_at: '2024-01-01T00:00:00.000Z',
     due_at,
     note: null,
+    owner: 'shared',
+    item_kind: 'task',
+    amount_cents: null,
+    provider: null,
+    paid_at: null,
+    recurrence: null,
+    source: 'manual',
+    inbound_email_id: null,
   }
 }
 
@@ -46,8 +54,8 @@ describe('getHenryBucketId', () => {
     expect(getHenryBucketId('2024-06-18T10:00:00', NOW)).toBe('this_week')
   })
 
-  it('maps beyond a week to later', () => {
-    expect(getHenryBucketId('2024-07-01T10:00:00', NOW)).toBe('later')
+  it('maps beyond a week to coming_up', () => {
+    expect(getHenryBucketId('2024-07-01T10:00:00', NOW)).toBe('coming_up')
   })
 })
 
@@ -64,14 +72,14 @@ describe('groupHenryItems', () => {
   it('orders buckets and sorts by due_at', () => {
     const buckets = groupHenryItems(
       [
-        item('later', '2024-08-01T00:00:00'),
+        item('coming', '2024-08-01T00:00:00'),
         item('today-late', '2024-06-15T18:00:00'),
         item('today-early', '2024-06-15T09:00:00'),
         item('overdue', '2024-06-10T00:00:00'),
       ],
       { now: NOW },
     )
-    expect(buckets.map((b) => b.id)).toEqual(['overdue', 'today', 'later'])
+    expect(buckets.map((b) => b.id)).toEqual(['overdue', 'today', 'coming_up'])
     expect(buckets.find((b) => b.id === 'today')?.items.map((i) => i.id)).toEqual([
       'today-early',
       'today-late',

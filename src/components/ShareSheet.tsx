@@ -46,7 +46,7 @@ export function ShareSheet({ code, onClose }: ShareSheetProps) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join our Grocery List',
+          title: 'Join our Home OS',
           text: `Join our grocery list with code: ${code}`,
           url: joinUrl,
         })
